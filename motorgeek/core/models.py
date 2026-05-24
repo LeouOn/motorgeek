@@ -24,7 +24,7 @@ class Car(Base):
     model: Mapped[str] = mapped_column(String(100), nullable=False)
     generation: Mapped[str] = mapped_column(String(50))
     year_start: Mapped[int] = mapped_column(Integer)
-    year_end: Mapped[int] = mapped_column(Integer)
+    year_end: Mapped[Optional[int]] = mapped_column(Integer)
     era_tag: Mapped[Optional[str]] = mapped_column(String(50))
     body_style: Mapped[Optional[str]] = mapped_column(String(50))
     country: Mapped[Optional[str]] = mapped_column(String(50))
