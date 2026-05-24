@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Compare — MotorGeek{% endblock %}
+{% block content %}
+<h1>Compare Cars</h1>
+<form method="post" hx-post="/compare" hx-target="#compare-results">
+    <label>Enter car IDs (comma-separated):</label>
+    <input type="text" name="car_ids" placeholder="1, 2, 3">
+    <button type="submit">Compare</button>
+</form>
+<div id="compare-results">
+{% if selected %}
+<canvas id="radarChart" width="400" height="400"></canvas>
+<script>
+new Chart(document.getElementById('radarChart'), {
+    type: 'radar',
+    data: { labels: {{ radar.labels | tojson }}, datasets: {{ radar.datasets | tojson }} },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+</script>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ car.make }} {{ car.model }} — MotorGeek{% endblock %}
+{% block content %}
+<h1>{{ car.make }} {{ car.model }} ({{ car.generation or 'base' }})</h1>
+<p class="meta">{{ car.year_start }}{% if car.year_end %}-{{ car.year_end }}{% endif %} | {{ car.body_style or '-' }} | {{ car.country or '-' }}</p>
+{% if perf %}
+<section><h2>Performance</h2>
+<div class="spec-grid">
+    <div>0-60: <strong>{{ perf.accel_0_60 }}s</strong></div>
+    <div>0-100: <strong>{{ perf.accel_0_100 }}s</strong></div>
+    <div>Top Speed: <strong>{{ perf.top_speed_mph }} mph</strong></div>
+    <div>1/4 Mi: <strong>{{ perf.quarter_mile_time }}s</strong></div>
+    <div>Lateral G: <strong>{{ perf.lateral_g }}g</strong></div>
+</div></section>
+{% endif %}
+{% if ice %}
+<section><h2>Powertrain</h2>
+<div class="spec-grid">
+    <div>Engine: <strong>{{ ice.engine_layout }}</strong></div>
+    <div>Displacement: <strong>{{ ice.displacement_cc }}cc</strong></div>
+    <div>HP: <strong>{{ ice.horsepower_bhp }} @ {{ ice.horsepower_rpm }}rpm</strong></div>
+    <div>Torque: <strong>{{ ice.torque_nm }}Nm @ {{ ice.torque_rpm }}rpm</strong></div>
+    <div>Redline: <strong>{{ ice.redline_rpm }}rpm</strong></div>
+    <div>Transmission: <strong>{{ ice.transmission_type }} {{ ice.gear_count }}-speed</strong></div>
+    <div>Drivetrain: <strong>{{ ice.drivetrain }}</strong></div>
+    <div>Weight: <strong>{{ ice.curb_weight_kg }}kg</strong></div>
+</div></section>
+{% endif %}
+{% endblock %}

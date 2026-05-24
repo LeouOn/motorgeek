@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Garage — MotorGeek{% endblock %}
+{% block content %}
+<h1>Your Garage</h1>
+<div class="car-grid">
+{% for car in cars %}
+<a href="/cars/{{ car.id }}" class="car-card">
+    <h3>{{ car.make }} {{ car.model }}</h3>
+    <p>{{ car.generation or 'base' }} | {{ car.year_start }}{% if car.year_end %}-{{ car.year_end }}{% endif %}</p>
+    <p>{{ car.body_style or '-' }} | {{ car.country or '-' }}</p>
+</a>
+{% else %}
+<p>No cars yet. Run <code>motorgeek car add</code> to add your first car.</p>
+{% endfor %}
+</div>
+{% endblock %}
