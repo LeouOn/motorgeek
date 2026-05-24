@@ -1,3 +1,4 @@
+import os
 import yaml
 from pathlib import Path
 from sqlalchemy import create_engine
@@ -9,6 +10,9 @@ _SessionLocal = None
 
 
 def get_db_path() -> Path:
+    env_path = os.environ.get("MOTORGEEK_DB_PATH")
+    if env_path:
+        return Path(env_path)
     config_path = Path("config.yaml")
     if config_path.exists():
         with open(config_path) as f:

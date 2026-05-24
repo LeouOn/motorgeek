@@ -19,6 +19,9 @@ dependencies = [
     "click",
 ]
 
+[project.scripts]
+motorgeek = "motorgeek.cli.main:app"
+
 [project.optional-dependencies]
 dev = ["pytest", "pytest-cov", "ruff"]
 
