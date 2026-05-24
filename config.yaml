@@ -1,0 +1,11 @@
+llm:
+  provider: openai
+  model: gpt-4o
+  api_key: ""
+
+database:
+  path: data/motorgeek.db
+
+scraping:
+  browser_extension_port: 8765
+  playwright_profile: null

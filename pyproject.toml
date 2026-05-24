@@ -1,0 +1,26 @@
+[project]
+name = "motorgeek"
+version = "0.1.0"
+description = "Car analysis and comparison tool"
+requires-python = ">=3.11"
+dependencies = [
+    "typer[all]",
+    "sqlalchemy>=2.0",
+    "alembic",
+    "pyyaml",
+    "openai>=1.0",
+    "anthropic>=0.20",
+    "fastapi>=0.110",
+    "jinja2>=3.1",
+    "uvicorn[standard]",
+    "httpx",
+    "rich>=13.0",
+    "click",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "ruff"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
