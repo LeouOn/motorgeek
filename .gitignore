@@ -1,4 +1,7 @@
 data/*.db
+config.yaml
+# data/seed_data.json is COMMITTED — run `python scripts/load_data.py` to restore from it
+# after cloning or pulling fresh. Always run `python seed_data.py` first to create tables.
 __pycache__/
 *.pyc
 .pytest_cache/

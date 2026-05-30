@@ -2,19 +2,70 @@
 {% block title %}Compare — MotorGeek{% endblock %}
 {% block content %}
 <h1>Compare Cars</h1>
-<form method="post" hx-post="/compare" hx-target="#compare-results">
-    <label>Enter car IDs (comma-separated):</label>
-    <input type="text" name="car_ids" placeholder="1, 2, 3">
+<form method="post" hx-post="/compare" hx-target="#compare-results" hx-swap="innerHTML">
+    <label>Enter car IDs (comma-separated):
+    <input type="text" name="car_ids" placeholder="2, 3, 4" value="{% for c in selected %}{{ c.id }}{% if not loop.last %}, {% endif %}{% endfor %}">
+    </label>
     <button type="submit">Compare</button>
 </form>
 <div id="compare-results">
 {% if selected %}
-<canvas id="radarChart" width="400" height="400"></canvas>
+<div class="compare-section">
+    <h2>Radar Overview</h2>
+    <canvas id="radarChart" width="400" height="400"></canvas>
+</div>
+
+<div class="compare-section">
+    <h2>Performance</h2>
+    <table class="compare-table">
+    <thead><tr><th>Metric</th>{% for c in selected %}<th>{{ c.make }} {{ c.model }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    <tr><td>0-60 (s)</td>{% for c in selected %}{% set perf = perf_data[c.id] %}<td>{{ perf.accel_0_60 if perf else '-' }}</td>{% endfor %}</tr>
+    <tr><td>0-100 (s)</td>{% for c in selected %}{% set perf = perf_data[c.id] %}<td>{{ perf.accel_0_100 if perf else '-' }}</td>{% endfor %}</tr>
+    <tr><td>Top Speed (mph)</td>{% for c in selected %}{% set perf = perf_data[c.id] %}<td>{{ perf.top_speed_mph if perf else '-' }}</td>{% endfor %}</tr>
+    <tr><td>Power/Weight (HP/t)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{% if ice and ice.horsepower_bhp and ice.curb_weight_kg %}{{ (ice.horsepower_bhp / (ice.curb_weight_kg / 1000)) | round(1) }}{% else %}-{% endif %}</td>{% endfor %}</tr>
+    <tr><td>Lateral G (g)</td>{% for c in selected %}{% set perf = perf_data[c.id] %}<td>{{ perf.lateral_g if perf else '-' }}</td>{% endfor %}</tr>
+    </tbody>
+    </table>
+</div>
+
+<div class="compare-section">
+    <h2>Powertrain</h2>
+    <table class="compare-table">
+    <thead><tr><th>Metric</th>{% for c in selected %}<th>{{ c.make }} {{ c.model }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    <tr><td>HP</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.horsepower_bhp if ice else '-' }}</td>{% endfor %}</tr>
+    <tr><td>Torque (Nm)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.torque_nm if ice else '-' }}</td>{% endfor %}</tr>
+    <tr><td>Displacement (cc)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.displacement_cc if ice else '-' }}</td>{% endfor %}</tr>
+    <tr><td>HP/Liter</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{% if ice and ice.horsepower_bhp and ice.displacement_cc %}{{ (ice.horsepower_bhp / (ice.displacement_cc / 1000)) | round(1) }}{% else %}-{% endif %}</td>{% endfor %}</tr>
+    <tr><td>Redline (rpm)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.redline_rpm if ice else '-' }}</td>{% endfor %}</tr>
+    <tr><td>Weight (kg)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.curb_weight_kg if ice else '-' }}</td>{% endfor %}</tr>
+    <tr><td>Drivetrain</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.drivetrain if ice else '-' }}</td>{% endfor %}</tr>
+    </tbody>
+    </table>
+</div>
+
+<div class="compare-section">
+    <h2>Reliability</h2>
+    <table class="compare-table">
+    <thead><tr><th>Metric</th>{% for c in selected %}<th>{{ c.make }} {{ c.model }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    <tr><td>Score /100</td>{% for c in selected %}{% set rel = rel_data[c.id] %}<td>{{ rel.reliability_score if rel else '-' }}</td>{% endfor %}</tr>
+    <tr><td>Part Availability</td>{% for c in selected %}{% set rel = rel_data[c.id] %}<td>{{ rel.part_availability if rel else '-' }}</td>{% endfor %}</tr>
+    <tr><td>DIY Friendly</td>{% for c in selected %}{% set rel = rel_data[c.id] %}<td>{{ rel.diy_friendliness if rel else '-' }}</td>{% endfor %}</tr>
+    </tbody>
+    </table>
+</div>
+
 <script>
 new Chart(document.getElementById('radarChart'), {
     type: 'radar',
     data: { labels: {{ radar.labels | tojson }}, datasets: {{ radar.datasets | tojson }} },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        scales: { r: { pointLabels: { color: '#c9d1d9' }, grid: { color: '#30363d' }, angleLines: { color: '#30363d' } } }
+    }
 });
 </script>
 {% endif %}

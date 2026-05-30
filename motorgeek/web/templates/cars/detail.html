@@ -3,27 +3,98 @@
 {% block content %}
 <h1>{{ car.make }} {{ car.model }} ({{ car.generation or 'base' }})</h1>
 <p class="meta">{{ car.year_start }}{% if car.year_end %}-{{ car.year_end }}{% endif %} | {{ car.body_style or '-' }} | {{ car.country or '-' }}</p>
-{% if perf %}
+<p><a href="/cars/{{ car.id }}/edit">Edit</a> <form method="post" action="/cars/{{ car.id }}/delete" style="display:inline"><button type="submit" onclick="return confirm('Delete this car?')">Delete</button></form></p>
+{% if car.description %}
+<p class="description">{{ car.description }}</p>
+{% endif %}
+
+{% if perf or ice %}
 <section><h2>Performance</h2>
 <div class="spec-grid">
-    <div>0-60: <strong>{{ perf.accel_0_60 }}s</strong></div>
-    <div>0-100: <strong>{{ perf.accel_0_100 }}s</strong></div>
-    <div>Top Speed: <strong>{{ perf.top_speed_mph }} mph</strong></div>
-    <div>1/4 Mi: <strong>{{ perf.quarter_mile_time }}s</strong></div>
-    <div>Lateral G: <strong>{{ perf.lateral_g }}g</strong></div>
-</div></section>
+    {% if perf %}
+    <div>0-60 <strong>{{ perf.accel_0_60 }}s</strong></div>
+    <div>0-100 <strong>{{ perf.accel_0_100 }}s</strong></div>
+    <div>Top Speed <strong>{{ perf.top_speed_mph }} mph</strong></div>
+    <div>1/4 Mi <strong>{{ perf.quarter_mile_time }}s</strong></div>
+    <div>Lateral G <strong>{{ perf.lateral_g }}g</strong></div>
+    {% endif %}
+    {% if ptw %}
+    <div>Power/Weight <strong>{{ ptw }} HP/t</strong></div>
+    {% endif %}
+    {% if hpl %}
+    <div>HP/Liter <strong>{{ hpl }} HP/L</strong></div>
+    {% endif %}
+</div>
+</section>
 {% endif %}
+
 {% if ice %}
 <section><h2>Powertrain</h2>
 <div class="spec-grid">
-    <div>Engine: <strong>{{ ice.engine_layout }}</strong></div>
-    <div>Displacement: <strong>{{ ice.displacement_cc }}cc</strong></div>
-    <div>HP: <strong>{{ ice.horsepower_bhp }} @ {{ ice.horsepower_rpm }}rpm</strong></div>
-    <div>Torque: <strong>{{ ice.torque_nm }}Nm @ {{ ice.torque_rpm }}rpm</strong></div>
-    <div>Redline: <strong>{{ ice.redline_rpm }}rpm</strong></div>
-    <div>Transmission: <strong>{{ ice.transmission_type }} {{ ice.gear_count }}-speed</strong></div>
-    <div>Drivetrain: <strong>{{ ice.drivetrain }}</strong></div>
-    <div>Weight: <strong>{{ ice.curb_weight_kg }}kg</strong></div>
-</div></section>
+    <div>Engine <strong>{{ ice.engine_layout or '-' }}</strong></div>
+    <div>Displacement <strong>{{ ice.displacement_cc or '-' }}cc</strong></div>
+    <div>HP <strong>{{ ice.horsepower_bhp or '-' }} @ {{ ice.horsepower_rpm or '-' }}rpm</strong></div>
+    <div>Torque <strong>{{ ice.torque_nm or '-' }}Nm @ {{ ice.torque_rpm or '-' }}rpm</strong></div>
+    <div>Redline <strong>{{ ice.redline_rpm or '-' }}rpm</strong></div>
+    <div>Transmission <strong>{{ ice.transmission_type or '-' }}{% if ice.gear_count %} {{ ice.gear_count }}-speed{% endif %}</strong></div>
+    <div>Drivetrain <strong>{{ ice.drivetrain or '-' }}</strong></div>
+    <div>Weight <strong>{{ ice.curb_weight_kg or '-' }}kg</strong></div>
+</div>
+</section>
+{% endif %}
+
+{% if rel %}
+<section><h2>Reliability</h2>
+<div class="spec-grid">
+    <div>Score <strong>{{ rel.reliability_score }}/100</strong></div>
+    <div>Avg Repair <strong>{{ rel.avg_repair_cost or '-' }}</strong></div>
+    <div>Recall Count <strong>{{ rel.recall_count or '0' }}</strong></div>
+    <div>Part Availability <strong>{{ rel.part_availability or '-' }}</strong></div>
+    <div>DIY Friendly <strong>{{ rel.diy_friendliness or '-' }}</strong></div>
+</div>
+{% if rel.known_issues %}
+<p class="issues"><em>{{ rel.known_issues }}</em></p>
+{% endif %}
+</section>
+{% endif %}
+
+{% if market %}
+<section><h2>Market</h2>
+<div class="spec-grid">
+    <div>Price Range <strong>${{ "{:,.0f}".format(market.price_low) }} – ${{ "{:,.0f}".format(market.price_high) }}</strong></div>
+    <div>Recorded <strong>{{ market.date_recorded.strftime('%Y-%m-%d') }}</strong></div>
+    <div>Trend <strong>{{ market.market_trend_indicator or '-' }}</strong></div>
+    <div>Source <strong>{{ market.source_site or '-' }}</strong></div>
+</div>
+{% if market_all|length > 1 %}
+<div id="market-chart">
+    <canvas id="marketLineChart"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chartjs@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const ctx = document.getElementById('marketLineChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [{% for m in market_all %}'{{ m.date_recorded.strftime('%Y-%m') }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Price Range ($)',
+            data: [{% for m in market_all %}{{ (m.price_low + m.price_high) / 2 }}{% if not loop.last %}, {% endif %}{% endfor %}],
+            borderColor: '#58a6ff',
+            backgroundColor: 'rgba(88,166,255,0.1)',
+            fill: true,
+            tension: 0.3,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: true, labels: { color: '#c9d1d9' } } },
+        scales: { x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+                  y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } } }
+    }
+});
+</script>
+{% endif %}
+</section>
 {% endif %}
 {% endblock %}

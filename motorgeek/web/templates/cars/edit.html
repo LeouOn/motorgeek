@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ car.make }} {{ car.model }} — MotorGeek{% endblock %}
+{% block content %}
+<h1>Edit {{ car.make }} {{ car.model }}</h1>
+{% if error %}
+<p style="color: red;">{{ error }}</p>
+{% endif %}
+<form method="post" action="/cars/{{ car.id }}/edit">
+<fieldset>
+<legend>Car Details</legend>
+<div>
+<label>Make</label>
+<input type="text" name="make" value="{{ car.make or '' }}">
+</div>
+<div>
+<label>Model</label>
+<input type="text" name="model" value="{{ car.model or '' }}">
+</div>
+<div>
+<label>Generation</label>
+<input type="text" name="generation" value="{{ car.generation or '' }}">
+</div>
+<div>
+<label>Year Start</label>
+<input type="number" name="year_start" value="{{ car.year_start or '' }}">
+</div>
+<div>
+<label>Year End</label>
+<input type="number" name="year_end" value="{{ car.year_end or '' }}">
+</div>
+<div>
+<label>Body Style</label>
+<input type="text" name="body_style" value="{{ car.body_style or '' }}">
+</div>
+<div>
+<label>Country</label>
+<input type="text" name="country" value="{{ car.country or '' }}">
+</div>
+<div>
+<label>Era Tag</label>
+<input type="text" name="era_tag" value="{{ car.era_tag or '' }}">
+</div>
+</fieldset>
+
+{% if perf %}
+<fieldset>
+<legend>Performance</legend>
+<div>
+<label>0-60 (s)</label>
+<input type="number" step="0.1" name="accel_0_60" value="{{ perf.accel_0_60 or '' }}">
+</div>
+<div>
+<label>0-100 (s)</label>
+<input type="number" step="0.1" name="accel_0_100" value="{{ perf.accel_0_100 or '' }}">
+</div>
+<div>
+<label>Top Speed (mph)</label>
+<input type="number" step="0.1" name="top_speed_mph" value="{{ perf.top_speed_mph or '' }}">
+</div>
+<div>
+<label>Lateral G</label>
+<input type="number" step="0.01" name="lateral_g" value="{{ perf.lateral_g or '' }}">
+</div>
+</fieldset>
+{% endif %}
+
+{% if ice %}
+<fieldset>
+<legend>Powertrain</legend>
+<div>
+<label>Horsepower (bhp)</label>
+<input type="number" step="1" name="horsepower_bhp" value="{{ ice.horsepower_bhp or '' }}">
+</div>
+<div>
+<label>Torque (Nm)</label>
+<input type="number" step="1" name="torque_nm" value="{{ ice.torque_nm or '' }}">
+</div>
+<div>
+<label>Displacement (cc)</label>
+<input type="number" step="1" name="displacement_cc" value="{{ ice.displacement_cc or '' }}">
+</div>
+<div>
+<label>Redline (rpm)</label>
+<input type="number" step="1" name="redline_rpm" value="{{ ice.redline_rpm or '' }}">
+</div>
+<div>
+<label>Curb Weight (kg)</label>
+<input type="number" step="1" name="curb_weight_kg" value="{{ ice.curb_weight_kg or '' }}">
+</div>
+</fieldset>
+{% endif %}
+
+{% if rel %}
+<fieldset>
+<legend>Reliability</legend>
+<div>
+<label>Reliability Score</label>
+<input type="number" step="0.1" name="reliability_score" value="{{ rel.reliability_score or '' }}">
+</div>
+</fieldset>
+{% endif %}
+
+<div>
+<button type="submit">Save</button>
+<a href="/cars/{{ car.id }}">Cancel</a>
+</div>
+</form>
+{% endblock %}

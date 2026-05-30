@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Chat — MotorGeek{% endblock %}
+{% block content %}
+<div class="query-layout">
+    <aside class="query-sidebar">
+        <h2>Collection</h2>
+        <div class="stats">
+            <div class="stat">{{ cars|length }} car{% if cars|length != 1 %}s{% endif %}</div>
+        </div>
+        <ul class="car-list">
+        {% for car in cars %}
+            <li><a href="/cars/{{ car.id }}">{{ car.make }} {{ car.model }}</a></li>
+        {% endfor %}
+        </ul>
+    </aside>
+    <div class="chat-area">
+        <h1>Query</h1>
+        <div class="chat-messages" id="chat-messages">
+            {% for msg in conversation %}
+                {% if msg.role == "user" %}
+                <div class="message-user">{{ msg.text }}</div>
+                {% elif msg.role == "agent" %}
+                <div class="message-agent">{{ msg.text }}</div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="chat-input-row">
+            <form method="post" action="/query" class="chat-form" id="chat-form">
+                <input name="message" id="message-input" placeholder="Ask about your collection..." autocomplete="off" autofocus>
+                <button type="submit">Send</button>
+            </form>
+            <a href="/query/clear" class="clear-btn">Clear</a>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById("chat-form").addEventListener("submit", function() {
+    setTimeout(function() {
+        var input = document.getElementById("message-input");
+        if (input) input.value = "";
+    }, 10);
+});
+var el = document.getElementById("chat-messages");
+if (el) el.scrollTop = el.scrollHeight;
+</script>
+{% endblock %}

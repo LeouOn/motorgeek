@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% block title %}Review — Ingest #{{ session.id }}{% endblock %}
+
+{% macro confidence_badge(level) -%}
+{% set colors = {"high": "#3fb950", "medium": "#d29922", "low": "#f85149", "?": "#8b949e"} %}
+<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{ colors.get(level, '#8b949e') }}; vertical-align: middle;" title="{{ level }} confidence"></span>
+{%- endmacro %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem; min-height: 70vh;">
+
+  {# ── LEFT: Structured Data Review ── #}
+  <div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h1 style="margin: 0;">Ingest Review</h1>
+      <span style="
+        padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;
+        {% if session.status == 'awaiting_response' %}background: #d29922; color: #0d1117;
+        {% elif session.status == 'enriched' %}background: #3fb950; color: #0d1117;
+        {% elif session.status == 'saved' %}background: var(--accent); color: #0d1117;
+        {% else %}background: var(--surface); color: var(--text-muted);{% endif %}
+      ">{{ session.status | replace('_', ' ') | title }}</span>
+    </div>
+
+    {% if parsed %}
+      {% set identity = parsed.get("identity", {}) %}
+      {% if identity %}
+      <details open style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0; color: var(--accent);">Identity</summary>
+        <div style="background: var(--surface); border-radius: 6px; padding: 1rem;">
+          {% for key, val in identity.items() %}
+          <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border);">
+            <span style="color: var(--text-muted);">{{ key | replace('_', ' ') }}</span>
+            <span>
+              {% if val is mapping and val.get("value") is not none %}
+                {{ val.value }} {{ confidence_badge(val.get("confidence", "?")) }}
+              {% elif val is not mapping and val is not none %}
+                {{ val }}
+              {% else %}
+                <span style="color: var(--text-muted);">—</span>
+              {% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+      {% set dims = parsed.get("dimensions", {}) %}
+      {% if dims %}
+      <details open style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0; color: var(--accent);">Dimensions</summary>
+        <div style="background: var(--surface); border-radius: 6px; padding: 1rem;">
+          {% for key, val in dims.items() %}
+          <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border);">
+            <span style="color: var(--text-muted);">{{ key | replace('_', ' ') }}</span>
+            <span>
+              {% if val is mapping %}{{ val.get("value", "—") }} {{ confidence_badge(val.get("confidence", "?")) }}
+              {% else %}{{ val }}{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+      {% set pt = parsed.get("powertrain", {}) %}
+      {% if pt %}
+      <details open style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0; color: var(--accent);">Powertrain</summary>
+        <div style="background: var(--surface); border-radius: 6px; padding: 1rem;">
+          {% for key, val in pt.items() %}
+          <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border);">
+            <span style="color: var(--text-muted);">{{ key | replace('_', ' ') }}</span>
+            <span>
+              {% if val is mapping %}{{ val.get("value", "—") }} {{ confidence_badge(val.get("confidence", "?")) }}
+              {% else %}{{ val }}{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+      {% set perf = parsed.get("performance", {}) %}
+      {% if perf %}
+      <details open style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0; color: var(--accent);">Performance</summary>
+        <div style="background: var(--surface); border-radius: 6px; padding: 1rem;">
+          {% set measurements = perf.get("measurements", []) if perf is mapping else [] %}
+          {% if measurements %}
+            {% for m in measurements %}
+            <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border);">
+              <span style="color: var(--text-muted); font-size: 0.875rem;">{{ m.metric_name | replace('_', ' ') }}</span>
+              <span style="font-size: 0.875rem;">
+                {{ m.value }} {{ m.unit }}
+                <span style="color: var(--text-muted); font-size: 0.75rem;">({{ m.source_site }}{% if m.sample_size %}, n={{ m.sample_size }}{% endif %})</span>
+                {{ confidence_badge(m.get("confidence", "?")) }}
+              </span>
+            </div>
+            {% endfor %}
+          {% else %}
+            <span style="color: var(--text-muted);">No measurements extracted</span>
+          {% endif %}
+        </div>
+      </details>
+      {% endif %}
+
+      {% set indices = parsed.get("indices", {}) %}
+      {% if indices %}
+      <details open style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0; color: var(--accent);">ZePerfs Indices</summary>
+        <div style="background: var(--surface); border-radius: 6px; padding: 1rem;">
+          {% for key, val in indices.items() %}
+          <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border);">
+            <span style="color: var(--text-muted);">{{ key | replace('_', ' ') }}</span>
+            <span>
+              {% if val is mapping %}{{ val.get("value", "—") }} {{ confidence_badge(val.get("confidence", "?")) }}
+              {% else %}{{ val }}{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+      {% set market = parsed.get("market", {}) %}
+      {% if market %}
+      <details open style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0; color: var(--accent);">Market / Cost</summary>
+        <div style="background: var(--surface); border-radius: 6px; padding: 1rem;">
+          {% for key, val in market.items() %}
+          <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--border);">
+            <span style="color: var(--text-muted);">{{ key | replace('_', ' ') }}</span>
+            <span>
+              {% if val is mapping %}{{ val.get("value", "—") }} {{ confidence_badge(val.get("confidence", "?")) }}
+              {% else %}{{ val }}{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+      {% set gaps = parsed.get("gaps", []) %}
+      {% if gaps %}
+      <details style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0; color: #d29922;">Gaps ({{ gaps | length }})</summary>
+        <div style="background: var(--surface); border-radius: 6px; padding: 1rem;">
+          <ul style="padding-left: 1.25rem; color: var(--text-muted);">
+            {% for g in gaps %}<li style="margin-bottom: 0.25rem;">{{ g }}</li>{% endfor %}
+          </ul>
+        </div>
+      </details>
+      {% endif %}
+
+      {% set conflicts = parsed.get("conflicts", []) %}
+      {% if conflicts %}
+      <details style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0; color: #f85149;">Conflicts ({{ conflicts | length }})</summary>
+        <div style="background: var(--surface); border-radius: 6px; padding: 1rem;">
+          {% for c in conflicts %}
+          <div style="margin-bottom: 0.5rem; font-size: 0.875rem;">
+            <strong>{{ c.field }}</strong>: {{ c.values | join(', ') }} {% if c.note %}<span style="color: var(--text-muted);">— {{ c.note }}</span>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+    {% else %}
+      <div style="background: var(--surface); border-radius: 6px; padding: 2rem; text-align: center; color: var(--text-muted);">
+        Processing… waiting for agent to analyze the paste.
+      </div>
+    {% endif %}
+
+    {# ── Bottom bar ── #}
+    <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
+      <form method="POST" action="/ingest/{{ session.id }}/discard" style="display: inline;">
+        <button type="submit" style="background: #f85149; color: white;">Discard</button>
+      </form>
+      {% if session.status == 'enriched' %}
+      <form method="POST" action="/ingest/{{ session.id }}/save" style="display: inline;">
+        <button type="submit" style="font-size: 1rem; padding: 0.75rem 2rem;">Looks Good, Save</button>
+      </form>
+      {% else %}
+      <button disabled style="opacity: 0.5; cursor: not-allowed; font-size: 1rem; padding: 0.75rem 2rem;">Answer questions to enable Save</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── RIGHT: Agent Chat ── #}
+  <div style="border-left: 1px solid var(--border); padding-left: 1.5rem; display: flex; flex-direction: column;">
+    <h2 style="margin-top: 0;">Agent Chat</h2>
+
+    <div id="chat-messages" style="flex: 1; overflow-y: auto; margin-bottom: 1rem; max-height: 60vh;">
+      {% for msg in messages %}
+      <div style="margin-bottom: 0.75rem; {% if msg.role == 'user' %}text-align: right;{% endif %}">
+        <div style="display: inline-block; max-width: 85%; padding: 0.5rem 0.75rem; border-radius: 10px; font-size: 0.875rem;
+          {% if msg.role == 'agent' %}
+            background: var(--surface); border: 1px solid var(--border); text-align: left;
+          {% else %}
+            background: var(--accent); color: #0d1117; text-align: left;
+          {% endif %}
+        ">
+          {% if msg.role == 'agent' %}
+          <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">🤖 Agent</div>
+          {% else %}
+          <div style="font-size: 0.7rem; opacity: 0.7; margin-bottom: 0.25rem;">You</div>
+          {% endif %}
+          <span style="white-space: pre-wrap;">{{ msg.text }}</span>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if not messages %}
+      <div style="color: var(--text-muted); font-style: italic; padding: 2rem 0; text-align: center;">
+        {% if session.status == 'draft' or session.status == 'processing' %}
+        Agent is analyzing your data…
+        {% else %}
+        The agent will ask questions here. Type your response below.
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    {% if session.status == 'awaiting_response' or session.status == 'enriched' %}
+    <form
+      hx-post="/ingest/{{ session.id }}/message"
+      hx-target="#chat-messages"
+      hx-swap="outerHTML"
+      style="display: flex; gap: 0.5rem;"
+    >
+      <input type="text" name="message" placeholder="Type your response…" required
+        style="flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; border-radius: 6px;">
+      <button type="submit">Send</button>
+    </form>
+    {% endif %}
+
+    {% if session.status == 'saved' %}
+    <div style="text-align: center; padding: 1rem; background: var(--surface); border-radius: 6px; color: #3fb950;">
+      ✓ Saved! <a href="/cars/{{ session.car_id }}" style="color: var(--accent);">View car →</a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

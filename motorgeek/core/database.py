@@ -40,4 +40,13 @@ def get_session() -> Session:
 def init_db():
     from motorgeek.core.models import Base
     engine = get_engine()
-    Base.metadata.create_all(engine)
+    existing_tables = engine.dialect.has_table(engine.connect(), "cars")
+    if not existing_tables:
+        Base.metadata.create_all(engine)
+    try:
+        import alembic.config
+        import alembic.command
+        alembic_cfg = alembic.config.Config("alembic.ini")
+        alembic.command.upgrade(alembic_cfg, "head")
+    except Exception:
+        pass

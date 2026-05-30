@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Any
 from sqlalchemy import ForeignKey, String, Integer, Boolean, Text, Float, JSON, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -31,7 +31,7 @@ class Car(Base):
     production_units: Mapped[Optional[int]] = mapped_column(Integer)
     description: Mapped[Optional[str]] = mapped_column(Text)
     image_paths: Mapped[Optional[Any]] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     @property
     def slug(self) -> str:
@@ -84,6 +84,21 @@ class Car(Base):
     hybrid_systems: Mapped[list["HybridSystem"]] = relationship(
         "HybridSystem", back_populates="car"
     )
+    dimensions: Mapped[Optional["Dimensions"]] = relationship(
+        "Dimensions", back_populates="car", uselist=False
+    )
+    performance_measurements: Mapped[list["PerformanceMeasurements"]] = relationship(
+        "PerformanceMeasurements", back_populates="car"
+    )
+    zeperfs_indices: Mapped[Optional["ZePerfsIndices"]] = relationship(
+        "ZePerfsIndices", back_populates="car", uselist=False
+    )
+    car_reviews: Mapped[list["CarReviews"]] = relationship(
+        "CarReviews", back_populates="car"
+    )
+    ingest_sessions: Mapped[list["IngestSessions"]] = relationship(
+        "IngestSessions", back_populates="car"
+    )
 
 
 class Performance(Base):
@@ -135,6 +150,18 @@ class PowertrainICE(Base):
     hybrid_system_id: Mapped[Optional[int]] = mapped_column(ForeignKey("hybrid_systems.id"))
     ground_clearance_mm: Mapped[Optional[int]] = mapped_column(Integer)
     cargo_volume_liters: Mapped[Optional[float]] = mapped_column(Float)
+    power_kw: Mapped[Optional[float]] = mapped_column(Float)
+    specific_power_per_cylinder_w_cm2: Mapped[Optional[float]] = mapped_column(Float)
+    bmep_bar: Mapped[Optional[float]] = mapped_column(Float)
+    mean_piston_speed_m_s: Mapped[Optional[float]] = mapped_column(Float)
+    engine_torque_nm: Mapped[Optional[float]] = mapped_column(Float)
+    fuel_consumption_mixed_l_100km: Mapped[Optional[float]] = mapped_column(Float)
+    fuel_consumption_sport_l_100km: Mapped[Optional[float]] = mapped_column(Float)
+    co2_emissions_g_km: Mapped[Optional[float]] = mapped_column(Float)
+    fuel_tank_capacity_l: Mapped[Optional[float]] = mapped_column(Float)
+    reserve_fuel_l: Mapped[Optional[float]] = mapped_column(Float)
+    top_speed_claimed_kmh: Mapped[Optional[float]] = mapped_column(Float)
+    power_reserve_pct: Mapped[Optional[float]] = mapped_column(Float)
     extra: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
 
     car: Mapped["Car"] = relationship("Car", back_populates="powertrain_ice")
@@ -275,6 +302,8 @@ class MarketHistory(Base):
     volume_sold_est: Mapped[Optional[int]] = mapped_column(Integer)
     market_trend_indicator: Mapped[Optional[str]] = mapped_column(String(50))
     source_site: Mapped[Optional[str]] = mapped_column(String(200))
+    currency: Mapped[Optional[str]] = mapped_column(String(10))
+    price_eur: Mapped[Optional[float]] = mapped_column(Float)
 
     car: Mapped["Car"] = relationship("Car", back_populates="market_history")
 
@@ -477,7 +506,7 @@ class LLMAnalyses(Base):
     model_used: Mapped[Optional[str]] = mapped_column(String(100))
     generated_text: Mapped[Optional[str]] = mapped_column(Text)
     scores: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     car: Mapped["Car"] = relationship("Car", back_populates="llm_analyses")
 
@@ -488,5 +517,121 @@ class ComparisonSession(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[Optional[str]] = mapped_column(String(200))
     car_ids: Mapped[Optional[Any]] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_viewed: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+
+class Dimensions(Base):
+    """Canonical physical measurements for a car. One row per car."""
+    __tablename__ = "dimensions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    car_id: Mapped[int] = mapped_column(ForeignKey("cars.id"), nullable=False, unique=True)
+    length_mm: Mapped[Optional[int]] = mapped_column(Integer)
+    width_mm: Mapped[Optional[int]] = mapped_column(Integer)
+    height_mm: Mapped[Optional[int]] = mapped_column(Integer)
+    wheelbase_mm: Mapped[Optional[int]] = mapped_column(Integer)
+    track_front_mm: Mapped[Optional[int]] = mapped_column(Integer)
+    track_rear_mm: Mapped[Optional[int]] = mapped_column(Integer)
+    front_overhang_mm: Mapped[Optional[int]] = mapped_column(Integer)
+    rear_overhang_mm: Mapped[Optional[int]] = mapped_column(Integer)
+    source: Mapped[Optional[str]] = mapped_column(String(200))
+    extra: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
+
+    car: Mapped["Car"] = relationship("Car", back_populates="dimensions")
+
+
+class PerformanceMeasurements(Base):
+    """Individual test result rows — each source's actual measurement with metadata."""
+    __tablename__ = "performance_measurements"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    car_id: Mapped[int] = mapped_column(ForeignKey("cars.id"), nullable=False)
+    metric_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    value: Mapped[float] = mapped_column(Float, nullable=False)
+    unit: Mapped[str] = mapped_column(String(20), nullable=False)
+    source_site: Mapped[Optional[str]] = mapped_column(String(100))
+    test_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    sample_size: Mapped[Optional[int]] = mapped_column(Integer)
+    conditions: Mapped[Optional[str]] = mapped_column(String(200))
+    notes: Mapped[Optional[str]] = mapped_column(Text)
+    extra: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
+
+    car: Mapped["Car"] = relationship("Car", back_populates="performance_measurements")
+
+
+class ZePerfsIndices(Base):
+    """ZePerfs proprietary indices stored per car."""
+    __tablename__ = "zeperfs_indices"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    car_id: Mapped[int] = mapped_column(ForeignKey("cars.id"), nullable=False, unique=True)
+    zeperfs_index: Mapped[Optional[float]] = mapped_column(Float)
+    sportivity_index: Mapped[Optional[float]] = mapped_column(Float)
+    perfs_prix_ratio: Mapped[Optional[float]] = mapped_column(Float)
+    source: Mapped[Optional[str]] = mapped_column(String(100))
+    recorded_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
+
+    car: Mapped["Car"] = relationship("Car", back_populates="zeperfs_indices")
+
+
+class CarReviews(Base):
+    """Consumer and expert reviews, ratings."""
+    __tablename__ = "car_reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    car_id: Mapped[int] = mapped_column(ForeignKey("cars.id"), nullable=False)
+    source_site: Mapped[Optional[str]] = mapped_column(String(100))
+    rating_overall: Mapped[Optional[float]] = mapped_column(Float)
+    rating_reliability: Mapped[Optional[float]] = mapped_column(Float)
+    rating_performance: Mapped[Optional[float]] = mapped_column(Float)
+    rating_comfort: Mapped[Optional[float]] = mapped_column(Float)
+    rating_value: Mapped[Optional[float]] = mapped_column(Float)
+    review_excerpt: Mapped[Optional[str]] = mapped_column(Text)
+    review_url: Mapped[Optional[str]] = mapped_column(String(500))
+    reviewer_name: Mapped[Optional[str]] = mapped_column(String(100))
+    review_date: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    extra: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
+
+    car: Mapped["Car"] = relationship("Car", back_populates="car_reviews")
+
+
+class IngestSessions(Base):
+    """Tracks the state of each paste-to-save ingestion flow."""
+    __tablename__ = "ingest_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    car_id: Mapped[Optional[int]] = mapped_column(ForeignKey("cars.id"))
+    raw_paste: Mapped[str] = mapped_column(Text, nullable=False)
+    source_url: Mapped[Optional[str]] = mapped_column(String(500))
+    source_site: Mapped[Optional[str]] = mapped_column(String(100))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+    llm_model: Mapped[Optional[str]] = mapped_column(String(50))
+    parsed_data: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
+    gaps_and_questions: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
+    agent_messages: Mapped[Optional[Any]] = mapped_column(JSON, default=list)
+    final_car_data: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    car: Mapped[Optional["Car"]] = relationship("Car", back_populates="ingest_sessions")
+    tool_calls: Mapped[list["AgentToolCallLog"]] = relationship(
+        "AgentToolCallLog", back_populates="session"
+    )
+
+
+class AgentToolCallLog(Base):
+    """Log of every tool call made by the agent loop."""
+    __tablename__ = "agent_tool_calls"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    session_id: Mapped[Optional[int]] = mapped_column(ForeignKey("ingest_sessions.id"))
+    tool_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    arguments: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
+    result: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="success")  # success | error
+    error_message: Mapped[Optional[str]] = mapped_column(Text)
+    duration_ms: Mapped[Optional[int]] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    session: Mapped[Optional["IngestSessions"]] = relationship("IngestSessions", back_populates="tool_calls")

@@ -1,6 +1,5 @@
 import typer
 from rich.console import Console
-from sqlalchemy.orm import Session
 
 from motorgeek.core.database import get_session
 from motorgeek.core.models import Car

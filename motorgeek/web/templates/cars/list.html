@@ -2,15 +2,53 @@
 {% block title %}Garage — MotorGeek{% endblock %}
 {% block content %}
 <h1>Your Garage</h1>
-<div class="car-grid">
+
+<div class="filter-bar">
+    <label>Filter:
+    <select id="eraFilter" onchange="filterCars()">
+        <option value="">All Eras</option>
+        <option value="90s">1990s</option>
+        <option value="00s">2000s</option>
+    </select>
+    <select id="countryFilter" onchange="filterCars()">
+        <option value="">All Countries</option>
+        <option value="Japan">Japan</option>
+        <option value="Germany">Germany</option>
+        <option value="Italy">Italy</option>
+    </select>
+    <select id="bodyFilter" onchange="filterCars()">
+        <option value="">All Bodies</option>
+        <option value="coupe">Coupe</option>
+        <option value="sedan">Sedan</option>
+        <option value="roadster">Roadster</option>
+    </select>
+    </label>
+</div>
+
+<div class="car-grid" id="carGrid">
 {% for car in cars %}
-<a href="/cars/{{ car.id }}" class="car-card">
-    <h3>{{ car.make }} {{ car.model }}</h3>
-    <p>{{ car.generation or 'base' }} | {{ car.year_start }}{% if car.year_end %}-{{ car.year_end }}{% endif %}</p>
-    <p>{{ car.body_style or '-' }} | {{ car.country or '-' }}</p>
-</a>
+<div class="car-card" data-era="{{ car.era_tag or '' }}" data-country="{{ car.country or '' }}" data-body="{{ car.body_style or '' }}">
+    <a href="/cars/{{ car.id }}"><h3>{{ car.make }} {{ car.model }}</h3></a>
+    <p class="gen">{{ car.generation or 'base' }} | {{ car.year_start }}{% if car.year_end %}-{{ car.year_end }}{% endif %}</p>
+    <p class="meta">{{ car.body_style or '-' }} | {{ car.country or '-' }}{% if car.era_tag %} | {{ car.era_tag }}{% endif %}</p>
+</div>
 {% else %}
 <p>No cars yet. Run <code>motorgeek car add</code> to add your first car.</p>
 {% endfor %}
 </div>
+
+<script>
+function filterCars() {
+    const era = document.getElementById('eraFilter').value;
+    const country = document.getElementById('countryFilter').value;
+    const body = document.getElementById('bodyFilter').value;
+    const cards = document.querySelectorAll('.car-card');
+    cards.forEach(card => {
+        const matchEra = !era || card.dataset.era === era;
+        const matchCountry = !country || card.dataset.country === country;
+        const matchBody = !body || card.dataset.body === body;
+        card.style.display = matchEra && matchCountry && matchBody ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}

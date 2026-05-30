@@ -1,0 +1,22 @@
+# MotorGeek configuration
+# Copy this file to config.yaml and fill in your values.
+# config.yaml is gitignored — never commit real API keys.
+
+llm:
+  # Supported: openai, anthropic, deepseek
+  provider: deepseek
+  model: deepseek-v4-flash
+  # Set your API key here, or use environment variable:
+  #   DEEPSEEK_API_KEY=sk-...  (for deepseek)
+  #   OPENAI_API_KEY=sk-...    (for openai)
+  #   ANTHROPIC_API_KEY=sk-... (for anthropic)
+  api_key: ""
+
+database:
+  path: data/motorgeek.db
+
+scraping:
+  # Port for optional browser extension companion
+  browser_extension_port: 8765
+  # Path to Playwright browser profile (optional)
+  playwright_profile: null

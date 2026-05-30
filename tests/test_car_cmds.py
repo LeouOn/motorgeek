@@ -1,5 +1,4 @@
 import os
-import tempfile
 import pytest
 from typer.testing import CliRunner
 from motorgeek.cli.main import app

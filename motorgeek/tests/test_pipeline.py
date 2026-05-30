@@ -1,4 +1,4 @@
-from motorgeek.core.pipeline import DimensionRouter, StructuredExtractor, IngestPipeline
+from motorgeek.core.pipeline import DimensionRouter
 
 def test_dimension_router_classification():
     router = DimensionRouter()

@@ -4,7 +4,7 @@ from rich.table import Table
 from sqlalchemy.orm import Session
 
 from motorgeek.core.database import get_session
-from motorgeek.core.models import Car, Performance, PowertrainICE, Reliability, CostToOwn, MarketHistory
+from motorgeek.core.models import Car, Performance, PowertrainICE
 from motorgeek.core.analysis import calculate_power_to_weight, calculate_hp_per_liter
 
 app = typer.Typer(name="compare")
@@ -33,15 +33,30 @@ def compare(
 
     if "perf" in dim_list:
         perf_data = {c.id: session.query(Performance).filter(Performance.car_id == c.id).first() for c in resolved}
+        ice_data = {c.id: session.query(PowertrainICE).filter(PowertrainICE.car_id == c.id).first() for c in resolved}
         for label, attr, direction in [
-            ("0-60 (s)", "accel_0_60", "min"),
+            ("0-60 (s)", None, "min"),
             ("0-100 (s)", "accel_0_100", "min"),
             ("Top Speed (mph)", "top_speed_mph", "max"),
-            ("Power/Weight", "power_to_weight", "max"),
+            ("Power/Weight", None, "max"),
             ("Lateral G", "lateral_g", "max"),
         ]:
-            vals = [getattr(perf_data.get(c.id), attr, None) for c in resolved]
-            row = [label] + [f"{v:.2f}" if v is not None else "-" for v in vals]
+            if attr:
+                vals = [getattr(perf_data.get(c.id), attr, None) for c in resolved]
+                row = [label] + [f"{v:.2f}" if v is not None else "-" for v in vals]
+            else:
+                if label == "0-60 (s)":
+                    vals = [getattr(perf_data.get(c.id), "accel_0_60", None) for c in resolved]
+                elif label == "Power/Weight":
+                    vals = []
+                    for c in resolved:
+                        ice = ice_data.get(c.id)
+                        if ice and ice.horsepower_bhp and ice.curb_weight_kg:
+                            ptw = calculate_power_to_weight(ice.horsepower_bhp, ice.curb_weight_kg)
+                            vals.append(ptw)
+                        else:
+                            vals.append(None)
+                row = [label] + [f"{v:.2f}" if v is not None else "-" for v in vals]
             table.add_row(*row)
 
     if "eng" in dim_list:

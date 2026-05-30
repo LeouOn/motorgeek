@@ -2,7 +2,6 @@ from motorgeek.core.analysis import (
     calculate_power_to_weight,
     calculate_hp_per_liter,
     calculate_msrp_inflation_adj,
-    rank_cars,
 )
 
 def test_calculate_power_to_weight():

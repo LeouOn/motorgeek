@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from motorgeek.core.models import Car, Performance, PowertrainICE
-from motorgeek.core.analysis import calculate_power_to_weight, calculate_hp_per_liter
+from motorgeek.core.analysis import calculate_power_to_weight
 
 
 def fill_power_to_weight_gaps(session: Session) -> int:
@@ -27,7 +27,6 @@ def fill_hp_per_liter_gaps(session: Session) -> int:
     for car in cars:
         ice = session.query(PowertrainICE).filter(PowertrainICE.car_id == car.id).first()
         if ice and ice.horsepower_bhp and ice.displacement_cc:
-            hpl = round(ice.horsepower_bhp / (ice.displacement_cc / 1000), 2)
             updated += 1
     session.commit()
     return updated

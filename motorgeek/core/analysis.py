@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from motorgeek.core.models import Car, Performance, PowertrainICE, Reliability, CostToOwn, MarketHistory
+from motorgeek.core.models import Car, Performance, PowertrainICE, Reliability
 
 
 def calculate_power_to_weight(hp: float, weight_kg: float) -> float:
@@ -56,7 +56,7 @@ def rank_cars(session: Session, metric: str, limit: int = 20, ascending: bool = 
             .filter(PowertrainICE.horsepower_bhp.isnot(None), PowertrainICE.curb_weight_kg.isnot(None))
             .all()
         )
-        scored = [(car, calculate_power_to_weight(ice.horsepower_bhp, ice.curb_weight_kg), "highest") for car, hp, wt in results]
+        scored = [(car, calculate_power_to_weight(hp, wt), "highest") for car, hp, wt in results]
         scored.sort(key=lambda x: x[1], reverse=not ascending)
         return scored[:limit]
     elif metric == "reliability":
@@ -73,7 +73,6 @@ def rank_cars(session: Session, metric: str, limit: int = 20, ascending: bool = 
 
 
 def era_compare(session: Session, era1: str, era2: str) -> dict:
-    from sqlalchemy import func
     results = {}
     for era in [era1, era2]:
         cars = session.query(Car).filter(Car.era_tag == era).all()

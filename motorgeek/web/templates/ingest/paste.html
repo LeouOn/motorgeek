@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Ingest — MotorGeek{% endblock %}
+{% block content %}
+<h1>Paste Car Data</h1>
+<p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+  Paste raw spec data from ZePerfs, KBB, Wikipedia, manufacturer sites — the agent will parse it into structured fields.
+</p>
+
+<form method="POST" action="/ingest">
+  <div style="margin-bottom: 1rem;">
+    <label for="raw_paste" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Raw text</label>
+    <textarea id="raw_paste" name="raw_paste" rows="20" required
+      style="width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 1rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem; resize: vertical;"
+      placeholder="Paste car data here… e.g. from ZePerfs, KBB, Wikipedia, manufacturer spec sheets"></textarea>
+  </div>
+
+  <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+    <div>
+      <label for="source_site" style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-muted);">Source site</label>
+      <select id="source_site" name="source_site"
+        style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; border-radius: 6px;">
+        <option value="">Auto-detect</option>
+        <option value="ZePerfs">ZePerfs</option>
+        <option value="KBB">KBB</option>
+        <option value="Wikipedia">Wikipedia</option>
+        <option value="Manufacturer">Manufacturer</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div style="flex: 1; min-width: 250px;">
+      <label for="source_url" style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-muted);">Source URL (optional)</label>
+      <input type="text" id="source_url" name="source_url"
+        style="width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; border-radius: 6px;"
+        placeholder="https://zeperfs.com/fiche6435-genesis-g90.htm">
+    </div>
+  </div>
+
+  <button type="submit" style="font-size: 1rem; padding: 0.75rem 2rem;">Analyze with Agent</button>
+</form>
+{% endblock %}
