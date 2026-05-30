@@ -1,7 +1,7 @@
 llm:
-  provider: openai
-  model: gpt-4o
-  api_key: ""
+  provider: deepseek
+  model: deepseek-v4-flash
+  api_key: ""  # set your API key here or via DEEPSEEK_API_KEY env var
 
 database:
   path: data/motorgeek.db

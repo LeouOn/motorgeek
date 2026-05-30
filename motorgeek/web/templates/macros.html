@@ -1,0 +1,143 @@
+{# ═══════════════════════════════════════════════════════════════════════════
+   MotorGeek Component Macros — Ant Design-inspired reusable components
+   Usage: {% from "macros.html" import btn, card, table, tag, alert, stat_card %}
+   ═══════════════════════════════════════════════════════════════════════════ #}
+
+{# ── Button ───────────────────────────────────────────────────────────────── #}
+{% macro btn(label, type="default", size="", url=none, icon=none, disabled=false, class="", attrs="") %}
+{% set classes = ["btn", "btn-" + type] %}
+{% if size %}{% set _ = classes.append("btn-" + size) %}{% endif %}
+{% if class %}{% set _ = classes.append(class) %}{% endif %}
+{% if url %}
+<a href="{{ url }}" class="{{ classes | join(' ') }}" {% if disabled %}disabled{% endif %} {{ attrs | safe }}>
+{% else %}
+<button class="{{ classes | join(' ') }}" {% if disabled %}disabled{% endif %} {{ attrs | safe }}>
+{% endif %}
+  {% if icon %}<span>{{ icon | safe }}</span>{% endif %}
+  <span>{{ label }}</span>
+{% if url %}</a>{% else %}</button>{% endif %}
+{% endmacro %}
+
+{# ── Card ─────────────────────────────────────────────────────────────────── #}
+{% macro card(title=none, class="", header_right=none, footer=none) %}
+<div class="card {{ class }}">
+  {% if title or header_right %}
+  <div class="card-header">
+    {% if title %}<h3>{{ title }}</h3>{% endif %}
+    {% if header_right %}<div>{{ header_right | safe }}</div>{% endif %}
+  </div>
+  {% endif %}
+  <div class="card-body">
+    {{ caller() }}
+  </div>
+  {% if footer %}
+  <div class="card-footer">{{ footer | safe }}</div>
+  {% endif %}
+</div>
+{% endmacro %}
+
+{# ── Statistic card ───────────────────────────────────────────────────────── #}
+{% macro stat_card(value, label, icon=none) %}
+<div class="stat-card">
+  {% if icon %}<div style="font-size: 24px; margin-bottom: 8px;">{{ icon }}</div>{% endif %}
+  <div class="stat-value">{{ value }}</div>
+  <div class="stat-label">{{ label }}</div>
+</div>
+{% endmacro %}
+
+{# ── Tag / Badge ──────────────────────────────────────────────────────────── #}
+{% macro tag(text, type="default", size="") %}
+{% set classes = ["tag", "tag-" + type] %}
+{% if size == "sm" %}{% set _ = classes.append("tag-sm") %}{% endif %}
+<span class="{{ classes | join(' ') }}">{{ text }}</span>
+{% endmacro %}
+
+{# ── Alert ────────────────────────────────────────────────────────────────── #}
+{% macro alert(text, type="info", title=none) %}
+<div class="alert alert-{{ type }}">
+  <span>
+    {% if title %}<strong>{{ title }}</strong><br>{% endif %}
+    {{ text }}
+  </span>
+</div>
+{% endmacro %}
+
+{# ── Table ────────────────────────────────────────────────────────────────── #}
+{% macro table(headers, rows, size="") %}
+<div class="table-wrap">
+<table class="table {% if size == 'sm' %}table-sm{% endif %}">
+  <thead>
+    <tr>
+      {% for h in headers %}
+      <th{% if h.align %} class="text-{{ h.align }}"{% endif %}>{{ h.label }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      {% for cell in row %}
+      <td{% if cell.align %} class="text-{{ cell.align }}"{% endif %}>{{ cell.value | safe }}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endmacro %}
+
+{# ── Form field ───────────────────────────────────────────────────────────── #}
+{% macro form_field(label, name, type="text", value="", placeholder="", required=false, help="", error="", attrs="") %}
+<div class="form-item">
+  {% if label %}<label for="{{ name }}">{{ label }}{% if required %} <span style="color: var(--color-error);">*</span>{% endif %}</label>{% endif %}
+  {% if type == "textarea" %}
+  <textarea class="textarea{% if error %} error{% endif %}" id="{{ name }}" name="{{ name }}"
+    placeholder="{{ placeholder }}" {% if required %}required{% endif %} {{ attrs | safe }}>{{ value }}</textarea>
+  {% elif type == "select" %}
+  <select class="select" id="{{ name }}" name="{{ name }}" {{ attrs | safe }}>
+    {{ caller() }}
+  </select>
+  {% else %}
+  <input class="input{% if error %} error{% endif %}" type="{{ type }}" id="{{ name }}" name="{{ name }}"
+    value="{{ value }}" placeholder="{{ placeholder }}"
+    {% if required %}required{% endif %} {{ attrs | safe }}>
+  {% endif %}
+  {% if help %}<div class="form-help">{{ help }}</div>{% endif %}
+  {% if error %}<div class="form-help" style="color: var(--color-error);">{{ error }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{# ── Loading spinner ──────────────────────────────────────────────────────── #}
+{% macro spinner(text="Loading…") %}
+<span class="htmx-indicator"><span class="spinner"></span> {{ text }}</span>
+{% endmacro %}
+
+{# ── HTMX button with spinner ─────────────────────────────────────────────── #}
+{% macro htmx_btn(label, hx_post, hx_target, type="primary", size="", loading_text="Loading…") %}
+<button class="btn btn-{{ type }}{% if size %} btn-{{ size }}{% endif %}"
+        hx-post="{{ hx_post }}" hx-target="{{ hx_target }}" hx-swap="innerHTML">
+  <span class="htmx-indicator"><span class="spinner"></span> {{ loading_text }}</span>
+  <span class="htmx-indicator-hide">{{ label }}</span>
+</button>
+{% endmacro %}
+
+{# ── Page header ──────────────────────────────────────────────────────────── #}
+{% macro page_header(title, subtitle=none, actions=none) %}
+<div class="flex items-center justify-between mb-xl">
+  <div>
+    <h1 style="margin: 0;">{{ title }}</h1>
+    {% if subtitle %}<p style="color: var(--color-text-secondary); margin-top: var(--space-xs);">{{ subtitle }}</p>{% endif %}
+  </div>
+  {% if actions %}<div class="flex gap-sm">{{ actions | safe }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{# ── Empty state ──────────────────────────────────────────────────────────── #}
+{% macro empty_state(icon="📭", title="No data", description=none, action=none) %}
+<div style="text-align: center; padding: var(--space-xxl) var(--space-xl); color: var(--color-text-tertiary);">
+  <div style="font-size: 48px; margin-bottom: var(--space-lg);">{{ icon }}</div>
+  <h3 style="color: var(--color-text-secondary);">{{ title }}</h3>
+  {% if description %}<p style="margin-top: var(--space-sm);">{{ description }}</p>{% endif %}
+  {% if action %}<div style="margin-top: var(--space-xl);">{{ action | safe }}</div>{% endif %}
+</div>
+{% endmacro %}

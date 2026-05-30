@@ -26,6 +26,7 @@ class Car(Base):
     year_start: Mapped[int] = mapped_column(Integer)
     year_end: Mapped[Optional[int]] = mapped_column(Integer)
     era_tag: Mapped[Optional[str]] = mapped_column(String(50))
+    character: Mapped[Optional[str]] = mapped_column(String(50))  # eco, warm, hot, hyper, luxury, classic, muscle, ev
     body_style: Mapped[Optional[str]] = mapped_column(String(50))
     country: Mapped[Optional[str]] = mapped_column(String(50))
     production_units: Mapped[Optional[int]] = mapped_column(Integer)

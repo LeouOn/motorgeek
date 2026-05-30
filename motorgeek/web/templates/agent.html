@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "macros.html" import btn, card, stat_card, tag, alert, htmx_btn, page_header, form_field %}
+
+{% block title %}Agent — MotorGeek{% endblock %}
+{% block content %}
+
+{{ page_header("🤖 Agent", subtitle="Paste car data & chat with your collection", actions=btn("+ New Car", type="primary", url="/cars/add")) }}
+
+{# ── Stats row ── #}
+<div class="stat-group mb-xl">
+    {{ stat_card(stats.car_count, "Cars", "🏎️") }}
+    {{ stat_card(stats.hp_range, "HP Range", "⚡") }}
+    {{ stat_card(stats.era_count, "Eras", "📅") }}
+    {{ stat_card(stats.tool_calls, "Tool Calls", "🔧") }}
+</div>
+
+<div class="grid-2">
+    {# ── LEFT: Quick ingest ── #}
+    {% call card("📥 Quick Ingest") %}
+        <form hx-post="/ingest" hx-target="#quick-result" hx-swap="innerHTML">
+            {{ form_field(none, "raw_paste", type="textarea", placeholder="Paste car data from ZePerfs, KBB, Wikipedia, manufacturer spec sheets…", attrs='rows="10"') }}
+            <div class="flex gap-sm items-center">
+                <div class="flex-1">
+                    <select class="select" name="source_site">
+                        <option value="">Auto-detect source</option>
+                        <option value="ZePerfs">ZePerfs</option>
+                        <option value="KBB">KBB</option>
+                        <option value="Wikipedia">Wikipedia</option>
+                        <option value="Manufacturer">Manufacturer</option>
+                    </select>
+                </div>
+                {{ htmx_btn("Analyze", "/ingest", "#quick-result", type="primary") }}
+            </div>
+        </form>
+        <div id="quick-result" class="mt-lg"></div>
+    {% endcall %}
+
+    {# ── RIGHT: Agent chat ── #}
+    {% call card("💬 Chat") %}
+        <div class="chat-messages" id="agent-chat" style="min-height: 300px; max-height: 450px;">
+            <div style="text-align: center; color: var(--color-text-tertiary); padding: var(--space-xxl);">
+                <p style="font-size: 32px; margin-bottom: var(--space-md);">👋</p>
+                <p>I'm your car collection agent.</p>
+                <p style="font-size: var(--font-size-xs);">Try:
+                    <em>"compare my fastest cars"</em> ·
+                    <em>"best value HP per dollar"</em> ·
+                    <em>"show German cars ranked"</em>
+                </p>
+            </div>
+        </div>
+        <form hx-post="/query/agent" hx-target="#agent-chat" hx-swap="innerHTML"
+              class="flex gap-sm mt-md">
+            <input class="input flex-1" name="message" placeholder="Ask about your collection…" autocomplete="off">
+            {{ htmx_btn("Send", "/query/agent", "#agent-chat", type="primary") }}
+        </form>
+    {% endcall %}
+</div>
+
+{# ── Suggestions ── #}
+{% if suggestions %}
+    {% call card("💡 Suggested Comparisons", class="mt-xl") %}
+        <div class="flex gap-sm flex-wrap">
+            {% for s in suggestions[:8] %}
+            <button class="btn btn-sm"
+                    hx-post="/query/agent"
+                    hx-target="#agent-chat"
+                    hx-swap="innerHTML"
+                    hx-vals='{"message": "compare {{ s.name|replace('"', '\\"') }}"}'>
+                ⚡ {{ s.name }}
+            </button>
+            {% endfor %}
+        </div>
+    {% endcall %}
+{% endif %}
+
+{% endblock %}

@@ -4,18 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MotorGeek{% endblock %}</title>
-    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/ant.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js"></script>
+    {% block head %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <a href="/">MotorGeek</a>
-        <a href="/cars">Garage</a>
-        <a href="/compare">Compare</a>
-        <a href="/query">Query</a>
-        <a href="/ingest">Ingest</a>
-    </nav>
-    <main>{% block content %}{% endblock %}</main>
+    <header class="app-header">
+        <a href="/" class="logo">🔧 MotorGeek</a>
+        <nav>
+            <a href="/cars" {% if request.url.path == '/cars' %}class="active"{% endif %}>Garage</a>
+            <a href="/compare" {% if request.url.path == '/compare' %}class="active"{% endif %}>Compare</a>
+            <a href="/agent" {% if request.url.path == '/agent' %}class="active"{% endif %}>Agent</a>
+            <a href="/ingest" {% if request.url.path == '/ingest' %}class="active"{% endif %}>Ingest</a>
+            <a href="/query" {% if request.url.path == '/query' %}class="active"{% endif %}>Query</a>
+        </nav>
+        <span style="color: var(--color-text-tertiary); font-size: var(--font-size-xs);">
+            {% if stats is defined and stats.car_count %}{{ stats.car_count }} cars{% endif %}
+        </span>
+    </header>
+    <div class="app-content {% block content_class %}{% endblock %}">
+        {% block content %}{% endblock %}
+    </div>
 </body>
 </html>

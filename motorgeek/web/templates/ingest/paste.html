@@ -1,24 +1,29 @@
 {% extends "base.html" %}
 {% block title %}Ingest — MotorGeek{% endblock %}
 {% block content %}
-<h1>Paste Car Data</h1>
+<h1>📥 Ingest Car Data</h1>
 <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
-  Paste raw spec data from ZePerfs, KBB, Wikipedia, manufacturer sites — the agent will parse it into structured fields.
+  Paste raw spec data from ZePerfs, KBB, Wikipedia, manufacturer sites — the AI agent will parse it into structured fields, identify gaps, and ask you questions.
 </p>
 
-<form method="POST" action="/ingest">
+<form
+  hx-post="/ingest"
+  hx-target="#ingest-result"
+  hx-swap="innerHTML"
+  hx-indicator="#ingest-spinner"
+  style="margin-bottom: 2rem;"
+>
   <div style="margin-bottom: 1rem;">
     <label for="raw_paste" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Raw text</label>
-    <textarea id="raw_paste" name="raw_paste" rows="20" required
-      style="width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 1rem; border-radius: 6px; font-family: monospace; font-size: 0.875rem; resize: vertical;"
+    <textarea id="raw_paste" name="raw_paste" rows="18" required
+      style="width: 100%; font-family: monospace; font-size: 0.875rem; resize: vertical;"
       placeholder="Paste car data here… e.g. from ZePerfs, KBB, Wikipedia, manufacturer spec sheets"></textarea>
   </div>
 
-  <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+  <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: flex-end;">
     <div>
       <label for="source_site" style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-muted);">Source site</label>
-      <select id="source_site" name="source_site"
-        style="background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; border-radius: 6px;">
+      <select id="source_site" name="source_site">
         <option value="">Auto-detect</option>
         <option value="ZePerfs">ZePerfs</option>
         <option value="KBB">KBB</option>
@@ -27,14 +32,30 @@
         <option value="Other">Other</option>
       </select>
     </div>
-    <div style="flex: 1; min-width: 250px;">
+    <div style="flex: 1; min-width: 200px;">
       <label for="source_url" style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: var(--text-muted);">Source URL (optional)</label>
-      <input type="text" id="source_url" name="source_url"
-        style="width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; border-radius: 6px;"
+      <input type="url" id="source_url" name="source_url" style="width: 100%;"
         placeholder="https://zeperfs.com/fiche6435-genesis-g90.htm">
     </div>
+    <div>
+      <button type="submit" style="font-size: 1rem; padding: 0.6rem 1.5rem;">
+        <span class="htmx-indicator" id="ingest-spinner"><span class="spinner"></span>Analyzing…</span>
+        <span class="htmx-indicator-hide">🤖 Analyze with Agent</span>
+      </button>
+    </div>
   </div>
-
-  <button type="submit" style="font-size: 1rem; padding: 0.75rem 2rem;">Analyze with Agent</button>
 </form>
+
+<div id="ingest-result"></div>
+
+{% if error %}
+<div style="background: #3d1515; border: 1px solid #f85149; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+  <strong>Error:</strong> {{ error }}
+</div>
+{% endif %}
+
+<style>
+.htmx-indicator-hide { opacity: 1; }
+.htmx-request .htmx-indicator-hide { display: none; }
+</style>
 {% endblock %}

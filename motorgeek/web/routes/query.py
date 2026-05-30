@@ -170,11 +170,13 @@ def query_agent(request: Request, message: str = Form(...)) -> HTMLResponse:
 
     if not api_key:
         agent_text = "LLM not configured. Set DEEPSEEK_API_KEY or configure config.yaml."
+        result = {}
     else:
         db = db_session()
         cars = db.query(Car).all()
         if not cars:
             agent_text = "Your collection is empty. Add some cars first."
+            result = {}
         else:
             car_context = _build_car_context(cars)
             system_prompt = f"""You are a helpful car analysis assistant with access to a car collection. You have tools to search, compare, and analyze cars. Use them to answer the user's questions.
@@ -195,17 +197,37 @@ Use tools when they would help. For comparisons, use list_all_cars or compare_ca
                 agent_text = result["final_response"]
             except Exception as e:
                 agent_text = f"Agent error: {e}. Try again with a simpler question."
+                result = {}
 
     if agent_text is None:
         agent_text = "Sorry, I couldn't process that. Try again."
 
+    # Extract tool calls from agent result
+    tool_calls_display = []
+    if result and "messages" in result:
+        for msg in result["messages"]:
+            if msg.get("role") == "assistant" and msg.get("tool_calls"):
+                for tc in msg["tool_calls"]:
+                    tool_calls_display.append({
+                        "role": "tool",
+                        "tool_name": tc["function"]["name"],
+                        "tool_result": tc["function"]["arguments"],
+                    })
+
     now = datetime.now(timezone.utc).isoformat()
-    conversation.append({"role": "user", "text": message, "timestamp": now})
+    conv_msg = {"role": "user", "text": message, "timestamp": now}
+    conversation.append(conv_msg)
+    for tc in tool_calls_display:
+        conversation.append(tc)
     conversation.append({"role": "agent", "text": agent_text, "timestamp": now})
     request.session["conversation"] = conversation
 
-    session = get_session()
-    cars = session.query(Car).all()
+    is_htmx = request.headers.get("HX-Request") == "true"
+    if is_htmx:
+        # Return just the updated chat messages as HTML
+        return templates.TemplateResponse(request, "query/_chat.html", {
+            "conversation": conversation,
+        })
     return templates.TemplateResponse(request, "query/index.html", {
-        "cars": cars, "conversation": conversation,
+        "cars": [], "conversation": conversation,
     })

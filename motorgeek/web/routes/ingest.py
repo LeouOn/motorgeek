@@ -32,7 +32,7 @@ async def ingest_page(request: Request) -> HTMLResponse:
 
 
 async def ingest_create(request: Request) -> HTMLResponse:
-    """POST /ingest — create session, run agent, redirect to review."""
+    """POST /ingest — create session, run agent, redirect to review (or return HTMX partial)."""
     form = await request.form()
     raw_paste = form.get("raw_paste", "").strip()
     if not raw_paste:
@@ -42,14 +42,22 @@ async def ingest_create(request: Request) -> HTMLResponse:
 
     source_url = form.get("source_url", "").strip() or None
     source_site = form.get("source_site", "").strip() or None
+    is_htmx = request.headers.get("HX-Request") == "true"
 
     db = db_session()
     try:
         session_obj = create_session(db, raw_paste, source_url=source_url, source_site=source_site)
-        # Run the agentic pipeline synchronously (for now; could be background)
         process_session(db, session_obj.id)
+        if is_htmx:
+            return templates.TemplateResponse(request, "ingest/_result.html", {
+                "session": session_obj,
+                "parsed": session_obj.parsed_data or {},
+                "messages": session_obj.agent_messages or [],
+            })
         return RedirectResponse(url=f"/ingest/{session_obj.id}", status_code=303)
     except Exception as e:
+        if is_htmx:
+            return HTMLResponse(f'<div class="ingest-result" style="border-color: #f85149;"><strong>Error:</strong> {e}</div>')
         return templates.TemplateResponse(request, "ingest/paste.html", {
             "error": f"Agent processing failed: {e}",
         })

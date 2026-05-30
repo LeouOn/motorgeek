@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Chat — MotorGeek{% endblock %}
+{% block title %}Query — MotorGeek{% endblock %}
 {% block content %}
 <div class="query-layout">
     <aside class="query-sidebar">
-        <h2>Collection</h2>
+        <h2>📊 Collection</h2>
         <div class="stats">
             <div class="stat">{{ cars|length }} car{% if cars|length != 1 %}s{% endif %}</div>
         </div>
@@ -12,35 +12,68 @@
             <li><a href="/cars/{{ car.id }}">{{ car.make }} {{ car.model }}</a></li>
         {% endfor %}
         </ul>
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" id="agent-mode" checked onchange="toggleAgentMode()">
+                🤖 Agent mode (tools)
+            </label>
+        </div>
     </aside>
     <div class="chat-area">
-        <h1>Query</h1>
+        <h1>💬 Chat</h1>
         <div class="chat-messages" id="chat-messages">
             {% for msg in conversation %}
                 {% if msg.role == "user" %}
                 <div class="message-user">{{ msg.text }}</div>
                 {% elif msg.role == "agent" %}
-                <div class="message-agent">{{ msg.text }}</div>
+                <div class="message-agent">{{ msg.text | safe }}</div>
+                {% elif msg.role == "tool" %}
+                <details class="tool-call">
+                    <summary>🔧 Tool: {{ msg.tool_name }}</summary>
+                    <pre>{{ msg.tool_result | safe }}</pre>
+                </details>
                 {% endif %}
             {% endfor %}
         </div>
         <div class="chat-input-row">
-            <form method="post" action="/query" class="chat-form" id="chat-form">
-                <input name="message" id="message-input" placeholder="Ask about your collection..." autocomplete="off" autofocus>
-                <button type="submit">Send</button>
+            <form method="post" hx-post="/query/agent" hx-target="#chat-messages" hx-swap="innerHTML"
+                  hx-indicator="#chat-spinner" id="chat-form" style="display: flex; gap: 0.5rem; flex: 1;">
+                <input name="message" id="message-input" placeholder="Ask about your collection…" autocomplete="off" autofocus style="flex: 1;">
+                <button type="submit">
+                    <span class="htmx-indicator" id="chat-spinner"><span class="spinner"></span></span>
+                    <span class="htmx-indicator-hide">Send</span>
+                </button>
             </form>
             <a href="/query/clear" class="clear-btn">Clear</a>
         </div>
     </div>
 </div>
+
 <script>
-document.getElementById("chat-form").addEventListener("submit", function() {
-    setTimeout(function() {
-        var input = document.getElementById("message-input");
-        if (input) input.value = "";
-    }, 10);
-});
+// Scroll to bottom on load
 var el = document.getElementById("chat-messages");
 if (el) el.scrollTop = el.scrollHeight;
+
+// Toggle agent mode
+function toggleAgentMode() {
+    var form = document.getElementById("chat-form");
+    var checked = document.getElementById("agent-mode").checked;
+    form.setAttribute("hx-post", checked ? "/query/agent" : "/query");
+}
+
+// Scroll after HTMX swap
+document.getElementById("chat-messages").addEventListener("htmx:afterSettle", function() {
+    this.scrollTop = this.scrollHeight;
+});
+
+// Clear input after send
+document.getElementById("chat-form").addEventListener("htmx:afterRequest", function() {
+    var input = document.getElementById("message-input");
+    if (input) input.value = "";
+});
 </script>
+<style>
+.htmx-indicator-hide { opacity: 1; }
+.htmx-request .htmx-indicator-hide { display: none; }
+</style>
 {% endblock %}

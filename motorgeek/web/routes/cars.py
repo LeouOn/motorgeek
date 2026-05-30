@@ -11,7 +11,29 @@ from motorgeek.web.app import templates
 def list_cars(request: Request) -> HTMLResponse:
     session = get_session()
     cars = session.query(Car).all()
-    return templates.TemplateResponse(request, "cars/list.html", {"cars": cars})
+
+    # Enrich cars with computed fields for the template
+    for car in cars:
+        ice = session.query(PowertrainICE).filter(PowertrainICE.car_id == car.id).first()
+        perf = session.query(Performance).filter(Performance.car_id == car.id).first()
+        car._hp = ice.horsepower_bhp if ice else None
+        car._accel = perf.accel_0_60 if perf else None
+        car._weight = ice.curb_weight_kg if ice else None
+
+    # Collect filter options
+    eras = sorted(set(c.era_tag for c in cars if c.era_tag))
+    countries = sorted(set(c.country for c in cars if c.country))
+    bodies = sorted(set(c.body_style for c in cars if c.body_style))
+    characters = sorted(set(c.character for c in cars if c.character))
+
+    return templates.TemplateResponse(request, "cars/list.html", {
+        "cars": cars,
+        "stats": {"car_count": len(cars)},
+        "eras": eras,
+        "countries": countries,
+        "bodies": bodies,
+        "characters": characters,
+    })
 
 
 def detail_car(car_id: int, request: Request) -> HTMLResponse:

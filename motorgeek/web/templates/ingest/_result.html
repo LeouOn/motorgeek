@@ -1,0 +1,75 @@
+{# HTMX partial: inline ingest result shown after form submission #}
+{% macro confidence_badge(level) -%}
+{% set colors = {"high": "#3fb950", "medium": "#d29922", "low": "#f85149", "?": "#8b949e"} %}
+<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{ colors.get(level, '#8b949e') }}; vertical-align: middle;" title="{{ level }} confidence"></span>
+{%- endmacro %}
+
+<div class="ingest-result" id="ingest-result">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h2 style="margin: 0;">
+      {% set ident = parsed.get("identity", {}) %}
+      {% if ident.get("make") %}
+        {{ ident.make }} {{ ident.model }}
+      {% else %}
+        Parsed Result
+      {% endif %}
+    </h2>
+    <span class="status-badge status-{{ session.status }}">{{ session.status | replace('_', ' ') }}</span>
+  </div>
+
+  {% if session.status == 'awaiting_response' or session.status == 'enriched' %}
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+      🤖 <strong>{{ messages[-1].text[:200] if messages else 'Agent processed your data.' }}</strong>
+    </p>
+    <p>
+      <a href="/ingest/{{ session.id }}" style="color: var(--accent);">📋 Open full review page →</a>
+      {% if session.status == 'enriched' %}
+        <span style="margin-left: 1rem; color: #3fb950;">✅ Ready to save!</span>
+      {% endif %}
+    </p>
+  {% elif session.status == 'processing' %}
+    <p style="color: var(--text-muted);">⏳ Processing your data…</p>
+  {% else %}
+    <p style="color: var(--text-muted);">Status: {{ session.status }}</p>
+  {% endif %}
+
+  {% if parsed %}
+    <details style="margin-top: 1rem;">
+      <summary style="cursor: pointer; color: var(--text-muted); font-size: 0.875rem;">Show extracted data preview</summary>
+      <div style="margin-top: 0.5rem; font-size: 0.8rem; max-height: 300px; overflow-y: auto;">
+        {% set identity = parsed.get("identity", {}) %}
+        {% if identity %}
+          <strong style="color: var(--accent);">Identity:</strong>
+          {% for key, val in identity.items() %}
+            {% if val is mapping and val.get("value") is not none %}
+              {{ val.value }}{% if not loop.last %}, {% endif %}
+            {% elif val is not mapping and val is not none %}
+              {{ val }}{% if not loop.last %}, {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        {% set pt = parsed.get("powertrain", {}) %}
+        {% if pt %}
+          <br><strong style="color: var(--accent);">Powertrain:</strong>
+          {% if pt.get("horsepower_bhp") and pt.horsepower_bhp.get("value") %}{{ pt.horsepower_bhp.value }}hp{% endif %}
+          {% if pt.get("torque_nm") and pt.torque_nm.get("value") %} · {{ pt.torque_nm.value }}Nm{% endif %}
+          {% if pt.get("displacement_cc") and pt.displacement_cc.get("value") %} · {{ pt.displacement_cc.value }}cc{% endif %}
+        {% endif %}
+
+        {% set perf = parsed.get("performance", {}) %}
+        {% if perf and perf.get("measurements") %}
+          <br><strong style="color: var(--accent);">Performance:</strong>
+          {% for m in perf.measurements[:5] %}
+            {{ m.metric_name | replace('_', ' ') }}: {{ m.value }}{{ m.unit }}{% if not loop.last %}, {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        {% set gaps = parsed.get("gaps", []) %}
+        {% if gaps %}
+          <br><strong style="color: #d29922;">⚠ Gaps ({{ gaps|length }}):</strong> {{ gaps[:3] | join('; ') }}
+        {% endif %}
+      </div>
+    </details>
+  {% endif %}
+</div>

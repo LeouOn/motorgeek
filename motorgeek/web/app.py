@@ -130,3 +130,9 @@ def query_clear(request: Request) -> HTMLResponse:
 def query_agent(request: Request, message: str = Form(...)) -> HTMLResponse:
     from motorgeek.web.routes.query import query_agent
     return query_agent(request, message)
+
+
+@app.get("/agent", name="agent")
+async def agent_dashboard(request: Request) -> HTMLResponse:
+    from motorgeek.web.routes.agent import agent_dashboard
+    return await agent_dashboard(request)
