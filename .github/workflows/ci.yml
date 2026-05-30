@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check motorgeek/ tests/ scripts/ seed_data.py
+
+      - name: Seed database
+        run: python seed_data.py
+
+      - name: Run tests
+        run: pytest tests/ -v
+
+  smoke:
+    name: Web App Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install app
+        run: pip install -e .
+
+      - name: Start server
+        run: python -m uvicorn motorgeek.web.app:app --port 8766 &
+        env:
+          MOTORGEEK_DB_PATH: data/motorgeek.db
+
+      - name: Wait for server
+        run: python -c "import time; time.sleep(3)"
+
+      - name: Smoke test /cars
+        run: curl -s -o /dev/null -w "%{http_code}" http://localhost:8766/cars | grep -q "200"
+
+      - name: Smoke test /query
+        run: curl -s -o /dev/null -w "%{http_code}" http://localhost:8766/query | grep -q "200"
