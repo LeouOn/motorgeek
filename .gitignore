@@ -1,7 +1,9 @@
 data/*.db
 config.yaml
-# data/seed_data.json is COMMITTED — run `python scripts/load_data.py` to restore from it
-# after cloning or pulling fresh. Always run `python seed_data.py` first to create tables.
+# DB is NOT tracked — schema lives in Alembic migrations, seed data in seed_data.py.
+# After cloning: run `motorgeek serve` once (auto-creates tables via init_db + Alembic),
+# then `python seed_data.py` for sample cars. Run `python scripts/load_data.py` to
+# restore from a previously dumped seed_data.json if available.
 __pycache__/
 *.pyc
 .pytest_cache/

@@ -27,6 +27,8 @@ class Car(Base):
     year_end: Mapped[Optional[int]] = mapped_column(Integer)
     era_tag: Mapped[Optional[str]] = mapped_column(String(50))
     character: Mapped[Optional[str]] = mapped_column(String(50))  # eco, warm, hot, hyper, luxury, classic, muscle, ev
+    family: Mapped[Optional[str]] = mapped_column(String(100))  # model lineage: "911", "M3", "Golf GTI"
+    variant: Mapped[Optional[str]] = mapped_column(String(100))  # trim/edition: "Turbo", "CSL", "Carrera S"
     body_style: Mapped[Optional[str]] = mapped_column(String(50))
     country: Mapped[Optional[str]] = mapped_column(String(50))
     production_units: Mapped[Optional[int]] = mapped_column(Integer)

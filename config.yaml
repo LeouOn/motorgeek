@@ -1,6 +1,6 @@
 llm:
   provider: deepseek
-  model: deepseek-v4-flash
+  model: deepseek-v4-pro
   api_key: ""  # set your API key here or via DEEPSEEK_API_KEY env var
 
 database:

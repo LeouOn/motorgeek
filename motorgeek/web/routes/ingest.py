@@ -42,12 +42,13 @@ async def ingest_create(request: Request) -> HTMLResponse:
 
     source_url = form.get("source_url", "").strip() or None
     source_site = form.get("source_site", "").strip() or None
+    family = form.get("family", "").strip() or None
     is_htmx = request.headers.get("HX-Request") == "true"
 
     db = db_session()
     try:
         session_obj = create_session(db, raw_paste, source_url=source_url, source_site=source_site)
-        process_session(db, session_obj.id)
+        process_session(db, session_obj.id, family=family)
         if is_htmx:
             return templates.TemplateResponse(request, "ingest/_result.html", {
                 "session": session_obj,

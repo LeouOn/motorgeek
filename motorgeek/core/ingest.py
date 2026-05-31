@@ -44,6 +44,88 @@ def transition(session_obj: IngestSessions, new_status: str, db: Session) -> Non
     db.commit()
 
 
+# ── family inheritance ───────────────────────────────────────────────────────
+
+def get_family_defaults(db: Session, family: str) -> dict:
+    """Look up existing cars in a family and return inherited traits.
+    
+    Returns dict with keys like 'make', 'country', 'body_style', 'drivetrain',
+    'engine_layout', 'transmission_type' — the values that all members share.
+    Returns empty dict if family not found.
+    """
+    from motorgeek.core.models import PowertrainICE
+    
+    cars = db.query(Car).filter(Car.family == family).all()
+    if not cars:
+        cars = db.query(Car).filter(Car.family.ilike(f"%{family}%")).all()
+    if not cars:
+        return {}
+
+    inherited = {}
+
+    # Identity fields — take from first car (assumed consistent)
+    base = cars[0]
+    inherited["family"] = family
+    if base.make:
+        inherited["make"] = base.make
+    if base.country:
+        inherited["country"] = base.country
+    if base.body_style:
+        inherited["body_style"] = base.body_style
+
+    # Powertrain fields — check consistency across variants
+    ice_rows = []
+    for c in cars:
+        ice = db.query(PowertrainICE).filter(PowertrainICE.car_id == c.id).first()
+        if ice:
+            ice_rows.append(ice)
+
+    if ice_rows:
+        drivetrains = set(i.drivetrain for i in ice_rows if i.drivetrain)
+        if len(drivetrains) == 1:
+            inherited["drivetrain"] = drivetrains.pop()
+
+        layouts = set(i.engine_layout for i in ice_rows if i.engine_layout)
+        if len(layouts) == 1:
+            inherited["engine_layout"] = layouts.pop()
+
+        transmissions = set(i.transmission_type for i in ice_rows if i.transmission_type)
+        if len(transmissions) == 1:
+            inherited["transmission_type"] = transmissions.pop()
+
+    # Collect variant names for context
+    variants = [c.variant for c in cars if c.variant]
+    if variants:
+        inherited["sibling_variants"] = variants
+
+    inherited["family_size"] = len(cars)
+    return inherited
+
+
+def build_family_context(inherited: dict) -> str:
+    """Build a text block describing family inheritance for the LLM prompt."""
+    if not inherited:
+        return ""
+
+    lines = [f"\n## Family Context: {inherited.get('family', 'Unknown')}"]
+    lines.append(f"This car belongs to the '{inherited['family']}' family ({inherited.get('family_size', 0)} variants already in collection).")
+
+    if inherited.get("sibling_variants"):
+        lines.append(f"Existing variants: {', '.join(inherited['sibling_variants'])}")
+
+    lines.append("\nInherited traits (apply unless explicitly overridden by the new variant):")
+    for field, label in [
+        ("make", "Make"), ("country", "Country"), ("body_style", "Body style"),
+        ("drivetrain", "Drivetrain"), ("engine_layout", "Engine layout"),
+        ("transmission_type", "Transmission type"),
+    ]:
+        if field in inherited:
+            lines.append(f"  - {label}: {inherited[field]}")
+
+    lines.append("\nOnly extract variant-specific details: engine specs (HP, torque, displacement), performance figures, price, weight. Do NOT change inherited traits unless the text explicitly states otherwise.")
+    return "\n".join(lines)
+
+
 # ── session CRUD ─────────────────────────────────────────────────────────────
 
 def create_session(
@@ -178,8 +260,16 @@ Text to analyze:
 
 # ── pipeline execution ───────────────────────────────────────────────────────
 
-def process_session(db: Session, session_id: int) -> IngestSessions:
-    """Run the full agentic extraction pipeline on a draft session."""
+def process_session(
+    db: Session,
+    session_id: int,
+    family: Optional[str] = None,
+) -> IngestSessions:
+    """Run the full agentic extraction pipeline on a draft session.
+    
+    If family is provided, inheritance context is injected into the prompt
+    so the LLM knows shared traits and only extracts variant-specific details.
+    """
     session_obj = get_session_by_id(db, session_id)
     if not session_obj:
         raise ValueError(f"Session {session_id} not found")
@@ -188,10 +278,22 @@ def process_session(db: Session, session_id: int) -> IngestSessions:
 
     transition(session_obj, "processing", db)
 
+    # Build inheritance context if family is known
+    family_context = ""
+    if family:
+        inherited = get_family_defaults(db, family)
+        if inherited:
+            family_context = build_family_context(inherited)
+            # Store the family on the session
+            session_obj.source_site = (session_obj.source_site or "") + f" [family: {family}]"
+
     llm = LLMClient()
 
-    # Build the prompt — use replace to avoid str.format() clashing with JSON braces
-    prompt = AGENTIC_EXTRACTION_PROMPT.replace("{text}", session_obj.raw_paste)
+    # Build the prompt — inject family context before the text
+    raw_text = session_obj.raw_paste
+    if family_context:
+        raw_text = family_context + "\n\n---\n\n" + raw_text
+    prompt = AGENTIC_EXTRACTION_PROMPT.replace("{text}", raw_text)
 
     try:
         raw_response = llm.complete(prompt)
@@ -642,3 +744,185 @@ def _upsert_reviews(db: Session, car_id: int, reviews: list) -> None:
         if url:
             existing.review_url = url
         db.add(existing)
+
+
+# ── Batch comparison ingestion ───────────────────────────────────────────────
+
+BATCH_COMPARISON_PROMPT = """You are a car data extraction specialist. Extract ALL cars and qualitative analysis from this multi-car comparison document.
+
+## Instructions
+1. Find EVERY car mentioned with specs (MSRP, horsepower, torque, 0-60, weight, platform, engine, drivetrain).
+2. For each car, extract: make, model, generation, year_start, year_end, msrp, horsepower, torque_nm, platform, engine_desc, drivetrain, body_style, country.
+3. Extract any qualitative analysis: platform comparisons, reliability assessments, cost-of-ownership estimates, recommendations.
+4. Identify which cars are being compared against each other.
+5. Convert all values to metric where possible (torque to Nm, weight to kg).
+
+## Output format — return ONLY valid JSON:
+{
+  "cars": [
+    {
+      "make": "Cadillac",
+      "model": "CTS",
+      "generation": "3rd gen",
+      "year_start": 2015,
+      "year_end": 2019,
+      "msrp": 45000,
+      "horsepower": 265,
+      "torque_nm": 400,
+      "platform": "GM Alpha II",
+      "engine_desc": "2.0L turbo I4",
+      "drivetrain": "RWD",
+      "body_style": "sedan",
+      "country": "USA",
+      "variants": [
+        {"name": "CTS-V", "horsepower": 640, "msrp": 86000, "engine_desc": "6.2L supercharged V8"}
+      ]
+    }
+  ],
+  "qualitative_analysis": {
+    "title": "CTS 3rd Gen vs Competitors",
+    "platform_comparison": {
+      "Alpha II": "Best for aging reliability — simple electronics, no 48V hybrid",
+      "CLAR": "Good — B58 engine robust, cooling system aging risk, dense electronics",
+      "MLB Evo": "Moderate — 48V failures documented, MMI voltage sensitivity",
+      "M3 (Genesis)": "Moderate to below average — reliability trending down"
+    },
+    "engine_analysis": {
+      "B58": "Mechanically robust, 200K+ capable, plastic cooling weak point",
+      "M276": "Best Mercedes engine in 20 years, 200K+ service life"
+    },
+    "cost_estimates": {
+      "annual_maintenance": {"CTS": "800-1200", "BMW 5": "1200-1800", "Genesis": "800-1200"}
+    },
+    "recommendations": [
+      {"car": "W212 E350", "price_range": "$15K-22K", "reason": "M276 V6, proven reliability, lowest risk"},
+      {"car": "G80 2.5T", "price_range": "$35K-45K", "reason": "Best warranty, lowest running costs"}
+    ],
+    "key_insight": "Alpha II wins on aging reliability because it was never designed for EV/hybrid — narrow scope becomes an asset at year 10-15."
+  },
+  "comparison_group": "Luxury Sport Sedans 2015-2025"
+}
+
+Text to analyze:
+{text}"""
+
+
+def batch_ingest_comparison(
+    db: Session,
+    raw_text: str,
+    source_url: Optional[str] = None,
+    source_site: Optional[str] = None,
+) -> dict:
+    """Process a multi-car comparison document. Returns summary of what was ingested."""
+    from motorgeek.core.models import ComparisonSession, HistoricalContext, LLMAnalyses
+
+    llm = LLMClient()
+    prompt = BATCH_COMPARISON_PROMPT.replace("{text}", raw_text)
+
+    try:
+        raw_response = llm.complete(prompt)
+        parsed = _parse_llm_json(raw_response)
+    except Exception as e:
+        return {"error": f"LLM extraction failed: {e}", "cars_ingested": 0}
+
+    cars_data = parsed.get("cars", [])
+    qualitative = parsed.get("qualitative_analysis", {})
+    comparison_name = parsed.get("comparison_group", "Batch Import")
+
+    ingested_cars = []
+    car_ids = []
+
+    for car_entry in cars_data:
+        try:
+            # Create a minimal car entry
+            make = car_entry.get("make", "Unknown")
+            model = car_entry.get("model", "Unknown")
+            gen = car_entry.get("generation", "")
+
+            car = Car(
+                make=make,
+                model=model,
+                generation=gen or "",
+                year_start=car_entry.get("year_start") or 0,
+                year_end=car_entry.get("year_end"),
+                body_style=car_entry.get("body_style", "sedan"),
+                country=car_entry.get("country", ""),
+                character="luxury" if car_entry.get("msrp", 0) > 40000 else "warm",
+                family=model,
+                variant=gen or "base",
+            )
+            db.add(car)
+            db.flush()
+
+            # Add powertrain if specs available
+            hp = car_entry.get("horsepower")
+            torque = car_entry.get("torque_nm")
+            if hp or torque:
+                ice = PowertrainICE(
+                    car_id=car.id,
+                    horsepower_bhp=hp,
+                    torque_nm=torque,
+                    drivetrain=car_entry.get("drivetrain", ""),
+                    engine_layout=car_entry.get("engine_desc", ""),
+                    source=source_site or "batch-comparison",
+                )
+                db.add(ice)
+
+            # Add cost data
+            msrp = car_entry.get("msrp")
+            if msrp:
+                cost = CostToOwn(
+                    car_id=car.id,
+                    msrp_original=float(msrp),
+                    msrp_currency="USD",
+                    source=source_site or "batch-comparison",
+                )
+                db.add(cost)
+
+            car_ids.append(car.id)
+            ingested_cars.append(f"{make} {model} ({gen})")
+            db.commit()
+
+        except Exception as e:
+            db.rollback()
+            ingested_cars.append(f"FAILED: {car_entry.get('make','?')} {car_entry.get('model','?')} — {e}")
+
+    # Store qualitative analysis as HistoricalContext for the first car (as representative)
+    if car_ids and qualitative:
+        try:
+            # Store platform analysis
+            platform_data = qualitative.get("platform_comparison", {})
+            engine_data = qualitative.get("engine_analysis", {})
+            recommendations = qualitative.get("recommendations", [])
+            key_insight = qualitative.get("key_insight", "")
+
+            # Create a comparison session linking all cars
+            comp_session = ComparisonSession(
+                name=comparison_name,
+                car_ids=car_ids,
+            )
+            db.add(comp_session)
+
+            # Store the full qualitative analysis as an LLM analysis on the first car
+            analysis = LLMAnalyses(
+                car_id=car_ids[0],
+                dimension="comparison",
+                model_used=llm.model,
+                generated_text=json.dumps(qualitative, indent=2, default=str),
+                scores={"cars_analyzed": len(car_ids)},
+            )
+            db.add(analysis)
+
+            db.commit()
+        except Exception:
+            db.rollback()
+
+    return {
+        "cars_ingested": len(ingested_cars),
+        "car_ids": car_ids,
+        "cars": ingested_cars,
+        "comparison_name": comparison_name,
+        "has_qualitative_analysis": bool(qualitative),
+        "platform_count": len(qualitative.get("platform_comparison", {})),
+        "recommendation_count": len(qualitative.get("recommendations", [])),
+    }

@@ -16,6 +16,7 @@ from motorgeek.core.ingest import (
     process_session,
     respond_to_session,
     save_session,
+    batch_ingest_comparison,
 )
 from motorgeek.core.llm import LLMClient
 
@@ -228,6 +229,43 @@ def list_cmd():
         )
 
     console.print(table)
+
+
+@app.command()
+def batch(
+    file_path: str = typer.Argument(..., help="Path to a markdown comparison file"),
+    source: str = typer.Option("LLM Comparison", "--source", "-s", help="Source label"),
+):
+    """Ingest a multi-car comparison document. Extracts ALL cars + qualitative analysis."""
+    from pathlib import Path
+
+    path = Path(file_path)
+    if not path.exists():
+        console.print(f"[red]File not found:[/red] {file_path}")
+        raise typer.Exit(1)
+
+    raw_text = path.read_text(encoding="utf-8")
+    console.print(f"[cyan]Read {len(raw_text):,} chars from {path.name}[/cyan]")
+    console.print("[yellow]Sending to LLM for multi-car extraction...[/yellow]")
+
+    db = get_session()
+    try:
+        result = batch_ingest_comparison(db, raw_text, source_site=source)
+        if result.get("error"):
+            console.print(f"[red]{result['error']}[/red]")
+            raise typer.Exit(1)
+
+        console.print(f"\n[green]✅ Ingested {result['cars_ingested']} cars![/green]")
+        for c in result.get("cars", []):
+            console.print(f"  • {c}")
+        console.print(f"\nComparison group: [cyan]{result.get('comparison_name', 'N/A')}[/cyan]")
+        if result.get("has_qualitative_analysis"):
+            console.print(f"Qualitative analysis: {result.get('platform_count', 0)} platforms, {result.get('recommendation_count', 0)} recommendations")
+        console.print(f"\nCar IDs: {result.get('car_ids', [])}")
+        console.print(f"\n[yellow]View at:[/yellow] http://localhost:8765/compare")
+    except Exception as e:
+        console.print(f"[red]Batch ingest failed:[/red] {e}")
+        raise typer.Exit(1)
 
 
 def _display_session_status(session_obj: IngestSessions):
