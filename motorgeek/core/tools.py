@@ -180,6 +180,28 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "enrich_car_data",
+            "description": "Fill missing performance data (0-60, weight, fuel economy, cargo) for a car using known specs. The system will estimate values from horsepower, displacement, drivetrain, and body style. Use this when a car is missing key comparison data. Can also suggest what data to ask the user for ('go fish' mode).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "car_id": {
+                        "type": "integer",
+                        "description": "Car ID to enrich",
+                    },
+                    "mode": {
+                        "type": "string",
+                        "enum": ["auto", "ask_user"],
+                        "description": "auto: fill using estimates. ask_user: return what data is missing and ask the user to provide it.",
+                    },
+                },
+                "required": ["car_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "refresh_market_price",
             "description": "Update market price for a specific car with a new price range. Use when you know current market values from research. Always note the source (KBB, Hagerty, BaT, etc).",
             "parameters": {
@@ -232,6 +254,7 @@ def execute_tool(
         "get_qualitative_analysis": _handle_qualitative,
         "check_market_freshness": _handle_market_freshness,
         "refresh_market_price": _handle_refresh_price,
+        "enrich_car_data": _handle_enrich,
         "save_ingest_data": _handle_save,
     }
 
@@ -376,6 +399,10 @@ def _handle_detail(db: Session, args: dict, _session_id: Optional[int] = None) -
             "drivetrain": ice.drivetrain if ice else None,
             "curb_weight_kg": ice.curb_weight_kg if ice else None,
             "hp_per_liter": hpl,
+            "fuel_consumption_l_100km": ice.fuel_consumption_mixed_l_100km if ice else None,
+            "cargo_volume_liters": ice.cargo_volume_liters if ice else None,
+            "fuel_econ_city_mpg": cost.fuel_econ_city_mpg if cost else None,
+            "fuel_econ_hwy_mpg": cost.fuel_econ_hwy_mpg if cost else None,
         }
         if ice
         else None,
@@ -679,6 +706,111 @@ def _handle_refresh_price(db: Session, args: dict, _session_id: Optional[int] = 
         "price_high": price_high,
         "source": source_site,
         "message": f"Updated {car.make} {car.model} market price to ${price_low:,}-${price_high:,} ({source_site})",
+    }
+
+
+def _handle_enrich(db: Session, args: dict, _session_id: Optional[int] = None) -> dict:
+    """Handle enrich_car_data tool — fill missing performance data."""
+    car_id = args.get("car_id")
+    mode = args.get("mode", "auto")
+
+    car = db.query(Car).filter(Car.id == car_id).first()
+    if not car:
+        return {"error": f"Car {car_id} not found"}
+
+    ice = db.query(PowertrainICE).filter(PowertrainICE.car_id == car_id).first()
+    perf = db.query(Performance).filter(Performance.car_id == car_id).first()
+    cost = db.query(CostToOwn).filter(CostToOwn.car_id == car_id).first()
+
+    hp = ice.horsepower_bhp if ice else None
+    wt = ice.curb_weight_kg if ice else None
+    disp = ice.displacement_cc if ice else None
+    drv = ice.drivetrain if ice else ""
+    body = car.body_style or "sedan"
+
+    # What's missing?
+    missing = []
+    if not wt: missing.append("curb_weight_kg")
+    if not (perf and perf.accel_0_60): missing.append("0-60 time")
+    if not (ice and ice.fuel_consumption_mixed_l_100km): missing.append("fuel consumption")
+    if not (ice and ice.cargo_volume_liters): missing.append("cargo volume")
+    if not (perf and perf.top_speed_mph): missing.append("top speed")
+
+    if mode == "ask_user":
+        return {
+            "car": f"{car.make} {car.model} ({car.generation or 'base'})",
+            "known": {"horsepower": hp, "weight_kg": wt, "displacement_cc": disp, "drivetrain": drv, "body": body},
+            "missing_fields": missing,
+            "prompt": f"Please provide: {', '.join(missing)} for the {car.make} {car.model}. You can paste specs from auto-data.net, ZePerfs, or Wikipedia.",
+        }
+
+    # Auto mode: estimate missing values
+    enriched = {}
+    estimated_fields = []
+
+    # Estimate weight from body style + displacement
+    if not wt and hp:
+        base = {"sedan": 1550, "coupe": 1500, "suv": 2000, "roadster": 1200, "hatchback": 1400}.get(body, 1600)
+        wt = base + (disp or 3000) * 0.15
+        estimated_fields.append(f"curb_weight_kg ≈ {wt:.0f} kg")
+        if ice:
+            ice.curb_weight_kg = wt
+            db.add(ice)
+            enriched["curb_weight_kg"] = round(wt)
+
+    # Estimate 0-60 from power-to-weight
+    if wt and hp and not (perf and perf.accel_0_60):
+        ptw = hp / (wt / 1000)
+        if ptw > 300: est_060 = 3.0
+        elif ptw > 200: est_060 = 4.0 + (300 - ptw) * 0.01
+        elif ptw > 150: est_060 = 5.0 + (200 - ptw) * 0.015
+        elif ptw > 100: est_060 = 6.5 + (150 - ptw) * 0.02
+        else: est_060 = 8.0
+        est_060 = round(est_060, 1)
+        estimated_fields.append(f"0-60 ≈ {est_060}s")
+        if not perf:
+            perf = Performance(car_id=car_id, accel_0_60=est_060, source="estimated")
+            db.add(perf)
+        else:
+            perf.accel_0_60 = est_060
+            perf.source = (perf.source or "") + " (estimated)"
+        enriched["accel_0_60"] = est_060
+
+    # Estimate fuel consumption
+    if hp and not (ice and ice.fuel_consumption_mixed_l_100km):
+        if "electric" in (ice.engine_layout or "").lower() or "ev" in (car.character or ""):
+            est_fuel = 0
+        elif hp > 500: est_fuel = 14
+        elif hp > 350: est_fuel = 10 + (hp - 350) * 0.02
+        elif hp > 200: est_fuel = 7 + (hp - 200) * 0.015
+        else: est_fuel = 5 + hp * 0.01
+        est_fuel = round(est_fuel, 1)
+        estimated_fields.append(f"fuel ≈ {est_fuel} L/100km")
+        if ice:
+            ice.fuel_consumption_mixed_l_100km = est_fuel
+            db.add(ice)
+        enriched["fuel_consumption_l_100km"] = est_fuel
+
+    # Estimate cargo
+    if body and not (ice and ice.cargo_volume_liters):
+        cargo_map = {"suv": 800, "hatchback": 400, "sedan": 480, "coupe": 300, "roadster": 150, "wagon": 600}
+        est_cargo = cargo_map.get(body, 400)
+        estimated_fields.append(f"cargo ≈ {est_cargo}L")
+        if ice:
+            ice.cargo_volume_liters = est_cargo
+            db.add(ice)
+        enriched["cargo_volume_liters"] = est_cargo
+
+    if estimated_fields:
+        db.commit()
+
+    return {
+        "car": f"{car.make} {car.model} ({car.generation or 'base'})",
+        "known": {"horsepower": hp, "weight_kg": wt, "drivetrain": drv, "body": body},
+        "missing_before": missing,
+        "estimated": estimated_fields,
+        "enriched_fields": enriched,
+        "note": "Values are ESTIMATES based on HP, weight, and body style. For accuracy, provide real specs.",
     }
 
 

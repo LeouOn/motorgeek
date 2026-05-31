@@ -4,7 +4,7 @@
 {% block title %}Agent — MotorGeek{% endblock %}
 {% block content %}
 
-{{ page_header("🤖 Agent", subtitle="Paste car data & chat with your collection", actions=btn("+ New Car", type="primary", url="/cars/add")) }}
+{{ page_header("🤖 Agent", subtitle="Paste car data & chat with your collection — agent remembers your conversation", actions=btn("+ New Car", type="primary", url="/cars/add")) }}
 
 {# ── Stats row ── #}
 <div class="stat-group mb-xl">
@@ -18,7 +18,7 @@
     {# ── LEFT: Quick ingest ── #}
     {% call card("📥 Quick Ingest") %}
         <form hx-post="/ingest" hx-target="#quick-result" hx-swap="innerHTML">
-            {{ form_field(none, "raw_paste", type="textarea", placeholder="Paste car data from ZePerfs, KBB, Wikipedia, manufacturer spec sheets…", attrs='rows="10"') }}
+            {{ form_field(none, "raw_paste", type="textarea", placeholder="Paste car data from ZePerfs, KBB, Wikipedia, manufacturer spec sheets…", attrs='rows="8"') }}
             <div class="flex gap-sm items-center">
                 <div class="flex-1">
                     <select class="select" name="source_site">
@@ -35,23 +35,48 @@
         <div id="quick-result" class="mt-lg"></div>
     {% endcall %}
 
-    {# ── RIGHT: Agent chat ── #}
+    {# ── RIGHT: Agent chat with memory ── #}
     {% call card("💬 Chat") %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-sm);">
+            <span style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+                🧠 Agent remembers context across messages. 
+                <a href="/query/clear" style="color: var(--color-error); font-size: 0.75rem;">Clear memory</a>
+            </span>
+        </div>
         <div class="chat-messages" id="agent-chat" style="min-height: 300px; max-height: 450px;">
+            {% if conversation %}
+                {% for msg in conversation %}
+                    {% if msg.role == "user" %}
+                    <div class="chat-msg chat-msg-user">{{ msg.text }}</div>
+                    {% elif msg.role == "agent" %}
+                    <div class="chat-msg chat-msg-agent">{{ msg.text | safe }}</div>
+                    {% elif msg.role == "tool" %}
+                    <details class="tool-call">
+                        <summary>🔧 {{ msg.tool_name }}</summary>
+                        <pre>{{ msg.tool_result }}</pre>
+                    </details>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
             <div style="text-align: center; color: var(--color-text-tertiary); padding: var(--space-xxl);">
                 <p style="font-size: 32px; margin-bottom: var(--space-md);">👋</p>
-                <p>I'm your car collection agent.</p>
-                <p style="font-size: var(--font-size-xs);">Try:
-                    <em>"compare my fastest cars"</em> ·
-                    <em>"best value HP per dollar"</em> ·
-                    <em>"show German cars ranked"</em>
+                <p>I'm your car collection agent with memory.</p>
+                <p style="font-size: var(--font-size-xs);">Try a multi-turn conversation:
+                    <em>"compare my fastest cars"</em> →
+                    <em>"now rank them by value"</em> →
+                    <em>"which is best for daily driving?"</em>
                 </p>
             </div>
+            {% endif %}
         </div>
         <form hx-post="/query/agent" hx-target="#agent-chat" hx-swap="innerHTML"
+              hx-indicator="#agent-spinner"
               class="flex gap-sm mt-md">
-            <input class="input flex-1" name="message" placeholder="Ask about your collection…" autocomplete="off">
-            {{ htmx_btn("Send", "/query/agent", "#agent-chat", type="primary") }}
+            <input class="input flex-1" name="message" placeholder="Ask about your collection…" autocomplete="off" autofocus>
+            <button type="submit" class="btn btn-primary">
+                <span class="htmx-indicator" id="agent-spinner"><span class="spinner"></span></span>
+                <span class="htmx-indicator-hide">Send</span>
+            </button>
         </form>
     {% endcall %}
 </div>
@@ -73,4 +98,13 @@
     {% endcall %}
 {% endif %}
 
+<script>
+document.getElementById("agent-chat")?.addEventListener("htmx:afterSettle", function() {
+    this.scrollTop = this.scrollHeight;
+});
+</script>
+<style>
+.htmx-indicator-hide { opacity: 1; }
+.htmx-request .htmx-indicator-hide { display: none; }
+</style>
 {% endblock %}

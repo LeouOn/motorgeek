@@ -69,6 +69,9 @@ def query_post(request: Request, message: str = Form(...)) -> HTMLResponse:
 
 def query_clear(request: Request) -> HTMLResponse:
     request.session["conversation"] = []
+    # Also clear the persistent conversation
+    from motorgeek.core.agent import reset_global_conversation
+    reset_global_conversation()
     session = get_session()
     cars = session.query(Car).all()
     return templates.TemplateResponse(request, "query/index.html", {
@@ -158,7 +161,10 @@ def query_agent(request: Request, message: str = Form(...)) -> HTMLResponse:
     if not message:
         return HTMLResponse("<p>Please enter a question.</p>")
 
-    conversation = request.session.get("conversation", [])
+    # Use persistent conversation
+    from motorgeek.core.agent import get_global_conversation
+    conv = get_global_conversation()
+
     api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
         try:
@@ -184,17 +190,18 @@ def query_agent(request: Request, message: str = Form(...)) -> HTMLResponse:
 Current collection:
 {car_context}
 
-Use tools when they would help. For comparisons, use list_all_cars or compare_cars. Be concise and data-driven."""
+Use tools when they would help. For comparisons, use list_all_cars or compare_cars. Be concise and data-driven. Remember previous questions in this conversation."""
 
             try:
-                agent = AgentLoop()
+                agent = AgentLoop(conversation=conv)
                 result = agent.run(
                     system_prompt=system_prompt,
                     user_message=message,
-                    conversation=conversation,
                     db=db,
                 )
                 agent_text = result["final_response"]
+                # Store in persistent conversation
+                conv.add_exchange(message, agent_text, result.get("summary", ""))
             except Exception as e:
                 agent_text = f"Agent error: {e}. Try again with a simpler question."
                 result = {}
@@ -214,20 +221,20 @@ Use tools when they would help. For comparisons, use list_all_cars or compare_ca
                         "tool_result": tc["function"]["arguments"],
                     })
 
+    # Build display conversation from persistent history + current messages
     now = datetime.now(timezone.utc).isoformat()
-    conv_msg = {"role": "user", "text": message, "timestamp": now}
-    conversation.append(conv_msg)
+    display_conversation = list(request.session.get("conversation", []))
+    display_conversation.append({"role": "user", "text": message, "timestamp": now})
     for tc in tool_calls_display:
-        conversation.append(tc)
-    conversation.append({"role": "agent", "text": agent_text, "timestamp": now})
-    request.session["conversation"] = conversation
+        display_conversation.append(tc)
+    display_conversation.append({"role": "agent", "text": agent_text, "timestamp": now})
+    request.session["conversation"] = display_conversation
 
     is_htmx = request.headers.get("HX-Request") == "true"
     if is_htmx:
-        # Return just the updated chat messages as HTML
         return templates.TemplateResponse(request, "query/_chat.html", {
-            "conversation": conversation,
+            "conversation": display_conversation,
         })
     return templates.TemplateResponse(request, "query/index.html", {
-        "cars": [], "conversation": conversation,
+        "cars": [], "conversation": display_conversation,
     })

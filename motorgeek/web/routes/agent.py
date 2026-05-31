@@ -43,6 +43,9 @@ async def agent_dashboard(request: Request) -> HTMLResponse:
     suggestions.sort(key=lambda x: x["score"], reverse=True)
     suggestions = suggestions[:6]
 
+    # Show conversation history
+    conversation = request.session.get("conversation", [])
+
     return templates.TemplateResponse(request, "agent.html", {
         "stats": {
             "car_count": car_count,
@@ -51,4 +54,5 @@ async def agent_dashboard(request: Request) -> HTMLResponse:
             "tool_calls": tool_calls,
         },
         "suggestions": suggestions,
+        "conversation": conversation,
     })

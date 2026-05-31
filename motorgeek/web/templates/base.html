@@ -18,13 +18,77 @@
             <a href="/agent" {% if request.url.path == '/agent' %}class="active"{% endif %}>Agent</a>
             <a href="/ingest" {% if request.url.path == '/ingest' %}class="active"{% endif %}>Ingest</a>
             <a href="/query" {% if request.url.path == '/query' %}class="active"{% endif %}>Query</a>
+            <a href="/brackets" {% if request.url.path == '/brackets' %}class="active"{% endif %}>Brackets</a>
         </nav>
+        <input class="input" id="global-search" placeholder="🔍 Search cars…" autocomplete="off"
+               style="width: 200px; height: 32px; font-size: 0.8rem;"
+               onkeyup="globalSearch()">
+        <div id="search-results" style="display:none; position:absolute; top:48px; right:24px; width:300px; max-height:300px; overflow-y:auto; background:var(--color-bg-container); border:1px solid var(--color-border); border-radius:8px; box-shadow:var(--shadow-lg); z-index:1000; padding:0.5rem;"></div>
         <span style="color: var(--color-text-tertiary); font-size: var(--font-size-xs);">
             {% if stats is defined and stats.car_count %}{{ stats.car_count }} cars{% endif %}
         </span>
     </header>
+    <div id="toast-container" style="position:fixed; top:70px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:0.5rem;"></div>
     <div class="app-content {% block content_class %}{% endblock %}">
         {% block content %}{% endblock %}
     </div>
+    <script>
+    // ── Global search ──
+    let searchTimeout;
+    async function globalSearch() {
+        clearTimeout(searchTimeout);
+        let q = document.getElementById('global-search').value.trim();
+        let div = document.getElementById('search-results');
+        if (q.length < 2) { div.style.display = 'none'; return; }
+        searchTimeout = setTimeout(async () => {
+            try {
+                let resp = await fetch('/cars?search=' + encodeURIComponent(q));
+                let html = await resp.text();
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(html, 'text/html');
+                let cards = doc.querySelectorAll('.car-card');
+                div.innerHTML = '';
+                if (cards.length === 0) {
+                    div.innerHTML = '<div style="padding:0.5rem;color:var(--color-text-tertiary);">No cars found</div>';
+                } else {
+                    cards.forEach(card => {
+                        let link = card.querySelector('a');
+                        let name = card.querySelector('h3');
+                        if (link && name) {
+                            let item = document.createElement('a');
+                            item.href = link.href;
+                            item.style.cssText = 'display:block;padding:0.5rem;border-radius:4px;color:var(--color-text);text-decoration:none;';
+                            item.innerHTML = name.outerHTML;
+                            item.onmouseenter = () => item.style.background = 'var(--color-fill)';
+                            item.onmouseleave = () => item.style.background = '';
+                            div.appendChild(item);
+                        }
+                    });
+                }
+                div.style.display = 'block';
+            } catch(e) { div.style.display = 'none'; }
+        }, 200);
+    }
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#global-search') && !e.target.closest('#search-results')) {
+            document.getElementById('search-results').style.display = 'none';
+        }
+    });
+
+    // ── Toast notifications ──
+    function showToast(message, type='success') {
+        let container = document.getElementById('toast-container');
+        let toast = document.createElement('div');
+        let colors = {success:'#0d3320', error:'#3d1515', info:'#0d2137', warning:'#3d2e00'};
+        let borders = {success:'#3fb950', error:'#f85149', info:'#58a6ff', warning:'#d29922'};
+        toast.style.cssText = `background:${colors[type]||'#0d3320'};border:1px solid ${borders[type]||'#3fb950'};color:#e6edf3;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;box-shadow:var(--shadow-lg);animation:slideIn 0.3s ease;max-width:350px;`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
+    }
+    </script>
+    <style>
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
 </body>
 </html>

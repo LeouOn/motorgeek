@@ -252,3 +252,17 @@ def check_market_freshness(db: Session) -> dict:
         "missing_cars": missing[:10],
         "recommendation": f"{len(stale)} prices are >6 months old. {len(missing)} cars have no market data. Consider updating for accurate comparisons.",
     }
+
+
+# ── Global conversation manager (shared across web requests) ─────────────────
+
+_global_conversation = ConversationManager()
+
+def get_global_conversation() -> ConversationManager:
+    """Return the singleton conversation manager."""
+    return _global_conversation
+
+def reset_global_conversation() -> None:
+    """Clear the global conversation."""
+    global _global_conversation
+    _global_conversation = ConversationManager()

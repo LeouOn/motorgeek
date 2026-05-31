@@ -136,3 +136,9 @@ def query_agent(request: Request, message: str = Form(...)) -> HTMLResponse:
 async def agent_dashboard(request: Request) -> HTMLResponse:
     from motorgeek.web.routes.agent import agent_dashboard
     return await agent_dashboard(request)
+
+
+@app.get("/brackets", name="brackets")
+async def brackets_page(request: Request) -> HTMLResponse:
+    from motorgeek.web.routes.brackets import brackets_page
+    return await brackets_page(request)

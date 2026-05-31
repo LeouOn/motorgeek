@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "macros.html" import card, tag, stat_card %}
+
+{% block title %}Brackets — MotorGeek{% endblock %}
+{% block content %}
+<h1>⚡ Performance Brackets</h1>
+<p style="color: var(--color-text-secondary); margin-bottom: 1.5rem;">Cars grouped by power-to-weight ratio — from eco cruisers to hypercar territory.</p>
+
+{% for bracket in brackets %}
+<div class="card mb-xl">
+    <div class="card-header">
+        <h2>{{ bracket.emoji }} {{ bracket.label }}</h2>
+        <span style="color: var(--color-text-tertiary);">{{ bracket.cars|length }} cars</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+        {% for car in bracket.cars %}
+        <a href="/cars/{{ car.id }}" style="text-decoration: none; color: inherit;">
+        <div style="background: var(--color-bg-container); border: 1px solid var(--color-border-secondary); border-radius: var(--border-radius); padding: 1rem; transition: var(--transition);"
+             onmouseenter="this.style.borderColor='var(--color-primary)'" onmouseleave="this.style.borderColor='var(--color-border-secondary)'">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <div>
+                    <strong>{{ car.make }} {{ car.model }}</strong>
+                    <div style="font-size: 0.75rem; color: var(--color-text-secondary);">{{ car.generation or '' }} · {{ car.year_start }}</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--color-primary);">{{ car._ptw }} <span style="font-size:0.7rem;">HP/t</span></div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-secondary);">
+                {% if car._hp %}<span>{{ car._hp }}hp</span>{% endif %}
+                {% if car._weight %}<span>{{ car._weight }}kg</span>{% endif %}
+                {% if car._accel %}<span>{{ car._accel }}s 0-60</span>{% endif %}
+            </div>
+            <div class="flex gap-sm mt-sm">
+                {% if car.character %}{{ tag(car.character|title, "warning", "sm") }}{% endif %}
+                {% if car.country %}{{ tag(car.country, "default", "sm") }}{% endif %}
+                {% if car.body_style %}{{ tag(car.body_style, "success", "sm") }}{% endif %}
+            </div>
+        </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+{% if not brackets %}
+<div style="text-align: center; padding: 4rem; color: var(--color-text-tertiary);">
+    <p style="font-size: 48px;">📊</p>
+    <p>No cars with weight + horsepower data yet. Add some cars or use the enrich tool!</p>
+</div>
+{% endif %}
+{% endblock %}

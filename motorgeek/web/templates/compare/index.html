@@ -1,61 +1,187 @@
 {% extends "base.html" %}
+{% from "macros.html" import btn, card, tag, alert %}
+
 {% block title %}Compare — MotorGeek{% endblock %}
+{% block head %}
+<style>
+.compare-selector { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+.compare-chip {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 0.8rem; border-radius: 20px; border: 1px solid var(--color-border);
+  cursor: pointer; font-size: 0.85rem; transition: var(--transition);
+  background: var(--color-bg-container);
+}
+.compare-chip:hover, .compare-chip.active { border-color: var(--color-primary); background: var(--color-primary-bg); }
+.compare-chip .remove { color: var(--color-text-tertiary); font-weight: bold; cursor: pointer; }
+.compare-card {
+  background: var(--color-bg-container); border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-lg); padding: 1rem; text-align: center;
+  min-width: 180px; flex: 1;
+}
+.compare-card h3 { font-size: 1rem; margin: 0 0 0.25rem 0; }
+.compare-card .hp { font-size: 1.5rem; font-weight: 700; color: var(--color-primary); }
+.compare-card .sub { font-size: 0.75rem; color: var(--color-text-secondary); }
+.winner-cell { background: #0d3320 !important; font-weight: 600; }
+.winner-cell::after { content: ' 🏆'; font-size: 0.7rem; }
+</style>
+{% endblock %}
+
 {% block content %}
-<h1>Compare Cars</h1>
-<form method="post" hx-post="/compare" hx-target="#compare-results" hx-swap="innerHTML">
-    <label>Enter car IDs (comma-separated):
-    <input type="text" name="car_ids" placeholder="2, 3, 4" value="{% for c in selected %}{{ c.id }}{% if not loop.last %}, {% endif %}{% endfor %}">
-    </label>
-    <button type="submit">Compare</button>
+<h1>⚔️ Compare Cars</h1>
+
+{# ── Quick search to add cars ── #}
+<div class="flex gap-sm mb-lg">
+    <input class="input flex-1" id="car-search" placeholder="Search cars to compare…" autocomplete="off"
+           onkeyup="filterCars()">
+</div>
+
+{# ── Car selection chips ── #}
+<form method="post" hx-post="/compare" hx-target="#compare-results" hx-swap="innerHTML" id="compare-form">
+<div class="compare-selector" id="car-chips">
+    {% for c in selected %}
+    <span class="compare-chip active" data-id="{{ c.id }}">
+        {{ c.make }} {{ c.model }}
+        <span class="remove" onclick="removeCar({{ c.id }})">×</span>
+        <input type="hidden" name="car_ids" value="{{ c.id }}">
+    </span>
+    {% endfor %}
+</div>
+<div class="flex gap-sm mb-xl">
+    <button type="submit" class="btn btn-primary" {% if selected|length < 2 %}disabled{% endif %}>
+        ⚔️ Compare ({{ selected|length }} selected)
+    </button>
+    {% if selected %}
+    <button type="button" class="btn" onclick="clearAll()">Clear</button>
+    {% endif %}
+</div>
 </form>
-<div id="compare-results">
+
+{# ── Available cars grid ── #}
+<div id="car-grid">
+    {% for c in cars %}
+    <span class="compare-chip" data-id="{{ c.id }}" data-name="{{ c.make }} {{ c.model }}" onclick="toggleCar({{ c.id }}, '{{ c.make }} {{ c.model }}')">
+        {{ c.make }} {{ c.model }}
+    </span>
+    {% endfor %}
+</div>
+
+{# ── Results ── #}
+<div id="compare-results" class="mt-xl">
 {% if selected %}
-<div class="compare-section">
-    <h2>Radar Overview</h2>
+<div class="grid-2 mb-xl">
+    {% for c in selected %}
+    <div class="compare-card">
+        <h3>{{ c.make }} {{ c.model }}</h3>
+        {% set ice = ice_data[c.id] %}
+        <div class="hp">{{ ice.horsepower_bhp|int if ice and ice.horsepower_bhp else '?' }} <span style="font-size:0.7rem;">HP</span></div>
+        <div class="sub">
+            {% if ice and ice.curb_weight_kg %}{{ ice.curb_weight_kg|int }}kg{% endif %}
+            {% if ice and ice.horsepower_bhp and ice.curb_weight_kg %}
+            · {{ (ice.horsepower_bhp / (ice.curb_weight_kg / 1000))|round(1) }} HP/t
+            {% endif %}
+        </div>
+        <div class="sub">
+            {% if perf_data[c.id] and perf_data[c.id].accel_0_60 %}
+            0-60: {{ perf_data[c.id].accel_0_60 }}s
+            {% endif %}
+        </div>
+        <div class="sub">
+            {% if cost_data[c.id] and cost_data[c.id].msrp_original %}
+            MSRP: ${{ cost_data[c.id].msrp_original|int|string }}
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if radar %}
+<div class="card mb-xl">
+    <h2>📊 Radar Overview</h2>
     <canvas id="radarChart" width="400" height="400"></canvas>
 </div>
+{% endif %}
 
-<div class="compare-section">
-    <h2>Performance</h2>
-    <table class="compare-table">
+{# ── Winner-aware tables ── #}
+{% macro winner_row(label, values, lower_is_better=False, unit='') %}
+<tr>
+    <td><strong>{{ label }}</strong></td>
+    {% for c in selected %}
+    {% set val = values[c.id] %}
+    {% set is_winner = val is not none and val == (values.values()|min if lower_is_better else values.values()|max) %}
+    <td class="{% if is_winner and selected|length > 1 %}winner-cell{% endif %}">
+        {{ val if val is not none else '-' }}{{ unit if val is not none else '' }}
+    </td>
+    {% endfor %}
+</tr>
+{% endmacro %}
+
+<div class="card mb-lg">
+    <h2>⚡ Performance</h2>
+    <div class="table-wrap">
+    <table class="table">
     <thead><tr><th>Metric</th>{% for c in selected %}<th>{{ c.make }} {{ c.model }}</th>{% endfor %}</tr></thead>
     <tbody>
-    <tr><td>0-60 (s)</td>{% for c in selected %}{% set perf = perf_data[c.id] %}<td>{{ perf.accel_0_60 if perf else '-' }}</td>{% endfor %}</tr>
-    <tr><td>0-100 (s)</td>{% for c in selected %}{% set perf = perf_data[c.id] %}<td>{{ perf.accel_0_100 if perf else '-' }}</td>{% endfor %}</tr>
-    <tr><td>Top Speed (mph)</td>{% for c in selected %}{% set perf = perf_data[c.id] %}<td>{{ perf.top_speed_mph if perf else '-' }}</td>{% endfor %}</tr>
-    <tr><td>Power/Weight (HP/t)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{% if ice and ice.horsepower_bhp and ice.curb_weight_kg %}{{ (ice.horsepower_bhp / (ice.curb_weight_kg / 1000)) | round(1) }}{% else %}-{% endif %}</td>{% endfor %}</tr>
-    <tr><td>Lateral G (g)</td>{% for c in selected %}{% set perf = perf_data[c.id] %}<td>{{ perf.lateral_g if perf else '-' }}</td>{% endfor %}</tr>
+    {% set accel = {} %}{% for c in selected %}{% set p = perf_data[c.id] %}{% set _ = accel.update({c.id: p.accel_0_60 if p and p.accel_0_60 else none}) %}{% endfor %}
+    {{ winner_row('0-60 (s)', accel, True, 's') }}
+    {% set ptw = {} %}{% for c in selected %}{% set i = ice_data[c.id] %}{% set _ = ptw.update({c.id: (i.horsepower_bhp/(i.curb_weight_kg/1000))|round(1) if i and i.horsepower_bhp and i.curb_weight_kg else none}) %}{% endfor %}
+    {{ winner_row('Power/Weight', ptw, False, ' HP/t') }}
+    {% set tops = {} %}{% for c in selected %}{% set p = perf_data[c.id] %}{% set _ = tops.update({c.id: p.top_speed_mph if p and p.top_speed_mph else none}) %}{% endfor %}
+    {{ winner_row('Top Speed', tops, False, ' mph') }}
     </tbody>
     </table>
+    </div>
 </div>
 
-<div class="compare-section">
-    <h2>Powertrain</h2>
-    <table class="compare-table">
+<div class="card mb-lg">
+    <h2>🔧 Powertrain</h2>
+    <div class="table-wrap">
+    <table class="table">
     <thead><tr><th>Metric</th>{% for c in selected %}<th>{{ c.make }} {{ c.model }}</th>{% endfor %}</tr></thead>
     <tbody>
-    <tr><td>HP</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.horsepower_bhp if ice else '-' }}</td>{% endfor %}</tr>
-    <tr><td>Torque (Nm)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.torque_nm if ice else '-' }}</td>{% endfor %}</tr>
-    <tr><td>Displacement (cc)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.displacement_cc if ice else '-' }}</td>{% endfor %}</tr>
-    <tr><td>HP/Liter</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{% if ice and ice.horsepower_bhp and ice.displacement_cc %}{{ (ice.horsepower_bhp / (ice.displacement_cc / 1000)) | round(1) }}{% else %}-{% endif %}</td>{% endfor %}</tr>
-    <tr><td>Redline (rpm)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.redline_rpm if ice else '-' }}</td>{% endfor %}</tr>
-    <tr><td>Weight (kg)</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.curb_weight_kg if ice else '-' }}</td>{% endfor %}</tr>
-    <tr><td>Drivetrain</td>{% for c in selected %}{% set ice = ice_data[c.id] %}<td>{{ ice.drivetrain if ice else '-' }}</td>{% endfor %}</tr>
+    {% set hp = {} %}{% for c in selected %}{% set i = ice_data[c.id] %}{% set _ = hp.update({c.id: i.horsepower_bhp if i else none}) %}{% endfor %}
+    {{ winner_row('Horsepower', hp, False, ' HP') }}
+    {% set tq = {} %}{% for c in selected %}{% set i = ice_data[c.id] %}{% set _ = tq.update({c.id: i.torque_nm if i else none}) %}{% endfor %}
+    {{ winner_row('Torque', tq, False, ' Nm') }}
+    {% set wt = {} %}{% for c in selected %}{% set i = ice_data[c.id] %}{% set _ = wt.update({c.id: i.curb_weight_kg if i else none}) %}{% endfor %}
+    {{ winner_row('Weight', wt, True, ' kg') }}
+    {% set fuel = {} %}{% for c in selected %}{% set i = ice_data[c.id] %}{% set _ = fuel.update({c.id: i.fuel_consumption_mixed_l_100km if i and i.fuel_consumption_mixed_l_100km else none}) %}{% endfor %}
+    {% if fuel.values()|select|list %}
+    {{ winner_row('Fuel Econ', fuel, True, ' L/100km') }}
+    {% endif %}
     </tbody>
     </table>
+    </div>
 </div>
 
-<div class="compare-section">
-    <h2>Reliability</h2>
-    <table class="compare-table">
+{% if rel_data.values()|selectattr('reliability_score')|list %}
+<div class="card mb-lg">
+    <h2>🛡️ Reliability</h2>
+    <div class="table-wrap">
+    <table class="table">
     <thead><tr><th>Metric</th>{% for c in selected %}<th>{{ c.make }} {{ c.model }}</th>{% endfor %}</tr></thead>
     <tbody>
-    <tr><td>Score /100</td>{% for c in selected %}{% set rel = rel_data[c.id] %}<td>{{ rel.reliability_score if rel else '-' }}</td>{% endfor %}</tr>
-    <tr><td>Part Availability</td>{% for c in selected %}{% set rel = rel_data[c.id] %}<td>{{ rel.part_availability if rel else '-' }}</td>{% endfor %}</tr>
-    <tr><td>DIY Friendly</td>{% for c in selected %}{% set rel = rel_data[c.id] %}<td>{{ rel.diy_friendliness if rel else '-' }}</td>{% endfor %}</tr>
+    {% set rel = {} %}{% for c in selected %}{% set r = rel_data[c.id] %}{% set _ = rel.update({c.id: r.reliability_score if r and r.reliability_score else none}) %}{% endfor %}
+    {{ winner_row('Score', rel, False, '/100') }}
     </tbody>
     </table>
+    </div>
 </div>
+{% endif %}
+
+{% if cost_data.values()|selectattr('msrp_original')|list %}
+<div class="card mb-lg">
+    <h2>💰 Cost</h2>
+    <div class="table-wrap">
+    <table class="table">
+    <thead><tr><th>Metric</th>{% for c in selected %}<th>{{ c.make }} {{ c.model }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% set msrp = {} %}{% for c in selected %}{% set co = cost_data[c.id] %}{% set _ = msrp.update({c.id: co.msrp_original if co and co.msrp_original else none}) %}{% endfor %}
+    {{ winner_row('MSRP', msrp, True, ' USD') }}
+    </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
 
 <script>
 new Chart(document.getElementById('radarChart'), {
@@ -70,4 +196,46 @@ new Chart(document.getElementById('radarChart'), {
 </script>
 {% endif %}
 </div>
+
+<script>
+function toggleCar(id, name) {
+    let form = document.getElementById('compare-form');
+    let chips = document.getElementById('car-chips');
+    let existing = chips.querySelector(`[data-id="${id}"]`);
+    if (existing) {
+        removeCar(id);
+        return;
+    }
+    if (chips.children.length >= 6) { alert('Max 6 cars'); return; }
+    let chip = document.createElement('span');
+    chip.className = 'compare-chip active';
+    chip.dataset.id = id;
+    chip.innerHTML = name + '<span class="remove" onclick="removeCar('+id+')">×</span>';
+    let input = document.createElement('input');
+    input.type = 'hidden'; input.name = 'car_ids'; input.value = id;
+    chip.appendChild(input);
+    chips.appendChild(chip);
+    updateForm();
+}
+function removeCar(id) {
+    document.querySelector(`#car-chips [data-id="${id}"]`)?.remove();
+    updateForm();
+}
+function clearAll() {
+    document.getElementById('car-chips').innerHTML = '';
+    updateForm();
+}
+function updateForm() {
+    let btn = document.querySelector('#compare-form button[type=submit]');
+    let count = document.querySelectorAll('#car-chips .compare-chip').length;
+    btn.textContent = '⚔️ Compare (' + count + ' selected)';
+    btn.disabled = count < 2;
+}
+function filterCars() {
+    let q = document.getElementById('car-search').value.toLowerCase();
+    document.querySelectorAll('#car-grid .compare-chip').forEach(c => {
+        c.style.display = c.dataset.name.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}
