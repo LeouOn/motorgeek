@@ -92,7 +92,7 @@ def calc_cost_per_hp(car_ref: str = typer.Argument(...)):
 
 @app.command("rank")
 def calc_rank(
-    metric: str = typer.Argument(..., help="Metric: 0-60, hp, hp-per-liter, power-weight, torque, displacement, weight, reliability"),
+    metric: str = typer.Argument(..., help="Metric: 0-60, hp, hp-per-liter, power-weight, torque, displacement, weight, reliability, reliability-engine, reliability-transmission, reliability-chassis, reliability-electronics, reliability-ease_of_repair"),
     limit: int = typer.Option(10, "--limit", "-n", help="Max results to show"),
     ascending: bool = typer.Option(False, "--ascending/--descending", help="Sort direction"),
 ):
@@ -126,6 +126,11 @@ def calc_rank(
             val = (ice.curb_weight_kg, "kg", True)
         elif metric == "reliability" and rel and rel.reliability_score:
             val = (rel.reliability_score, "/100", False)
+        elif metric.startswith("reliability-") and rel:
+            dim = metric.split("-", 1)[1]
+            dim_val = getattr(rel, f'score_{dim}', None)
+            if dim_val is not None:
+                val = (dim_val, f"/100 ({dim})", False)
 
         if val:
             scored.append((car, val[0], val[1], val[2]))
@@ -147,6 +152,11 @@ def calc_rank(
         "displacement": "Disp",
         "weight": "Weight",
         "reliability": "Score",
+        "reliability-engine": "Engine",
+        "reliability-transmission": "Transmission",
+        "reliability-chassis": "Chassis",
+        "reliability-electronics": "Electronics",
+        "reliability-ease_of_repair": "Ease of Repair",
     }
     label = metric_labels.get(metric, metric)
 

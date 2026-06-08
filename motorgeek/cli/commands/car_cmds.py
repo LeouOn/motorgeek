@@ -197,6 +197,16 @@ def edit(car_ref: str):
         val = prompt_field("reliability_score", str(rel.reliability_score) if rel.reliability_score else None)
         if val is not None:
             rel.reliability_score = float(val) if val else None
+        for dim, label in [('score_engine', 'Engine score'), ('score_transmission', 'Transmission score'),
+                           ('score_chassis', 'Chassis score'), ('score_electronics', 'Electronics score'),
+                           ('score_ease_of_repair', 'Ease of repair score')]:
+            current = getattr(rel, dim)
+            val = prompt_field(label, str(int(current)) if current else None)
+            if val is not None:
+                setattr(rel, dim, float(val) if val else None)
+
+        from motorgeek.core.scoring import recompute_aggregate
+        recompute_aggregate(rel)
 
     session.commit()
     console.print(f"[green]Updated car {car.id}: {car.make} {car.model} ({car.generation})[/green]")

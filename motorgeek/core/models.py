@@ -53,6 +53,9 @@ class Car(Base):
     reliability: Mapped[Optional["Reliability"]] = relationship(
         "Reliability", back_populates="car", uselist=False
     )
+    build_quality: Mapped[Optional["BuildQuality"]] = relationship(
+        "BuildQuality", back_populates="car", uselist=False
+    )
     consumables: Mapped[Optional["ConsumablesAndSpecs"]] = relationship(
         "ConsumablesAndSpecs", back_populates="car", uselist=False
     )
@@ -252,9 +255,62 @@ class Reliability(Base):
     part_availability: Mapped[Optional[str]] = mapped_column(String(100))
     diy_friendliness: Mapped[Optional[str]] = mapped_column(String(50))
     known_issues: Mapped[Optional[Any]] = mapped_column(JSON, default=list)
+    score_engine: Mapped[Optional[float]] = mapped_column(Float)
+    score_transmission: Mapped[Optional[float]] = mapped_column(Float)
+    score_chassis: Mapped[Optional[float]] = mapped_column(Float)
+    score_electronics: Mapped[Optional[float]] = mapped_column(Float)
+    score_ease_of_repair: Mapped[Optional[float]] = mapped_column(Float)
+    score_notes: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
     extra: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
 
     car: Mapped["Car"] = relationship("Car", back_populates="reliability")
+
+
+class BuildQuality(Base):
+    __tablename__ = "build_quality"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    car_id: Mapped[int] = mapped_column(ForeignKey("cars.id"), nullable=False, unique=True)
+
+    # Composite Q-score
+    q_score: Mapped[Optional[float]] = mapped_column(Float)
+
+    # Build Precision subscores (factory quality)
+    score_body_construction: Mapped[Optional[float]] = mapped_column(Float)
+    score_nvh_isolation: Mapped[Optional[float]] = mapped_column(Float)
+    score_interior_materials: Mapped[Optional[float]] = mapped_column(Float)
+
+    # Aging Durability subscores (how it holds up)
+    score_paint_corrosion: Mapped[Optional[float]] = mapped_column(Float)
+    score_electrical_aging: Mapped[Optional[float]] = mapped_column(Float)
+    score_cosmetic_aging: Mapped[Optional[float]] = mapped_column(Float)
+
+    # Text evidence (agent-defensible scoring justification)
+    body_construction_notes: Mapped[Optional[str]] = mapped_column(Text)
+    nvh_isolation_notes: Mapped[Optional[str]] = mapped_column(Text)
+    interior_materials_notes: Mapped[Optional[str]] = mapped_column(Text)
+    paint_corrosion_notes: Mapped[Optional[str]] = mapped_column(Text)
+    electrical_aging_notes: Mapped[Optional[str]] = mapped_column(Text)
+    cosmetic_aging_notes: Mapped[Optional[str]] = mapped_column(Text)
+    q_score_notes: Mapped[Optional[str]] = mapped_column(Text)
+
+    # Structural metadata (queryable, comparison-useful)
+    platform_type: Mapped[Optional[str]] = mapped_column(String(50))
+    assembly_plant: Mapped[Optional[str]] = mapped_column(String(100))
+    weld_technology: Mapped[Optional[str]] = mapped_column(String(50))
+    panel_gap_mm: Mapped[Optional[float]] = mapped_column(Float)
+    engine_mount_type: Mapped[Optional[str]] = mapped_column(String(50))
+    glass_type: Mapped[Optional[str]] = mapped_column(String(100))
+    leather_grade: Mapped[Optional[str]] = mapped_column(String(50))
+    wood_type: Mapped[Optional[str]] = mapped_column(String(50))
+    paint_stages: Mapped[Optional[int]] = mapped_column(Integer)
+    sound_deadening_rating: Mapped[Optional[str]] = mapped_column(String(50))
+
+    # Metadata
+    source: Mapped[Optional[str]] = mapped_column(String(200))
+    extra: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
+
+    car: Mapped["Car"] = relationship("Car", back_populates="build_quality")
 
 
 class ConsumablesAndSpecs(Base):
