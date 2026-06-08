@@ -409,6 +409,14 @@ def _handle_detail(db: Session, args: dict, _session_id: Optional[int] = None) -
         "reliability": {
             "score": rel.reliability_score if rel else None,
             "common_failures": rel.common_failures if rel else None,
+            "dimensions": {
+                "engine": rel.score_engine if rel else None,
+                "transmission": rel.score_transmission if rel else None,
+                "chassis": rel.score_chassis if rel else None,
+                "electronics": rel.score_electronics if rel else None,
+                "ease_of_repair": rel.score_ease_of_repair if rel else None,
+            } if rel else None,
+            "dimension_notes": rel.score_notes if rel else None,
         }
         if rel
         else None,

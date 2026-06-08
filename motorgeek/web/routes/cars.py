@@ -95,6 +95,11 @@ def edit_car_post(
     redline_rpm: str = Form(""),
     curb_weight_kg: str = Form(""),
     reliability_score: str = Form(""),
+    score_engine: str = Form(""),
+    score_transmission: str = Form(""),
+    score_chassis: str = Form(""),
+    score_electronics: str = Form(""),
+    score_ease_of_repair: str = Form(""),
 ) -> HTMLResponse:
     session = get_session()
     car = session.query(Car).filter(Car.id == car_id).first()
@@ -166,6 +171,12 @@ def edit_car_post(
     if rel:
         if reliability_score:
             rel.reliability_score = float(reliability_score)
+        for dim_field in ['score_engine', 'score_transmission', 'score_chassis', 'score_electronics', 'score_ease_of_repair']:
+            val = locals()[dim_field]
+            if val:
+                setattr(rel, dim_field, float(val))
+        from motorgeek.core.scoring import recompute_aggregate
+        recompute_aggregate(rel)
 
     session.commit()
     return RedirectResponse(url=f"/cars/{car_id}", status_code=303)

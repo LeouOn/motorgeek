@@ -105,6 +105,13 @@ def _build_car_context(cars: list[Car]) -> str:
         if rel and rel.reliability_score is not None:
             rel_score = f"{rel.reliability_score:.0f}"
 
+        rel_dims = []
+        if rel and any(getattr(rel, f'score_{d}', None) is not None for d in ['engine', 'transmission', 'chassis', 'electronics', 'ease_of_repair']):
+            for d in ['engine', 'transmission', 'chassis', 'electronics', 'ease_of_repair']:
+                val = getattr(rel, f'score_{d}', None)
+                if val is not None:
+                    rel_dims.append(f"{d}: {val:.0f}")
+
         market = (
             session.query(MarketHistory)
             .filter(MarketHistory.car_id == car.id)
@@ -129,6 +136,8 @@ def _build_car_context(cars: list[Car]) -> str:
             f"  Market: {price_low} – {price_high}\n"
             f"  Body: {body} | {country} | {era}"
         )
+        if rel_dims:
+            line += f"\n  Reliability dimensions: {', '.join(rel_dims)}"
         lines.append(line)
     return "\n\n".join(lines)
 

@@ -52,6 +52,24 @@
     <div>Part Availability <strong>{{ rel.part_availability or '-' }}</strong></div>
     <div>DIY Friendly <strong>{{ rel.diy_friendliness or '-' }}</strong></div>
 </div>
+{% if rel.score_engine or rel.score_transmission or rel.score_chassis or rel.score_electronics or rel.score_ease_of_repair %}
+<h3>Dimensional Breakdown</h3>
+<div class="spec-grid">
+    {% if rel.score_engine is not none %}<div>Engine <strong>{{ rel.score_engine }}/100</strong></div>{% endif %}
+    {% if rel.score_transmission is not none %}<div>Transmission <strong>{{ rel.score_transmission }}/100</strong></div>{% endif %}
+    {% if rel.score_chassis is not none %}<div>Chassis <strong>{{ rel.score_chassis }}/100</strong></div>{% endif %}
+    {% if rel.score_electronics is not none %}<div>Electronics <strong>{{ rel.score_electronics }}/100</strong></div>{% endif %}
+    {% if rel.score_ease_of_repair is not none %}<div>Ease of Repair <strong>{{ rel.score_ease_of_repair }}/100</strong></div>{% endif %}
+</div>
+{% endif %}
+{% if rel.score_notes %}
+<h3>Dimension Notes</h3>
+<ul>
+{% for dim, note in rel.score_notes.items() %}
+    <li><strong>{{ dim }}:</strong> {{ note }}</li>
+{% endfor %}
+</ul>
+{% endif %}
 {% if rel.known_issues %}
 <p class="issues"><em>{{ rel.known_issues }}</em></p>
 {% endif %}

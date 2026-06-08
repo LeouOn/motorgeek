@@ -97,6 +97,26 @@
 <label>Reliability Score</label>
 <input type="number" step="0.1" name="reliability_score" value="{{ rel.reliability_score or '' }}">
 </div>
+<div>
+<label>Engine Score</label>
+<input type="number" step="0.1" name="score_engine" value="{{ rel.score_engine or '' }}">
+</div>
+<div>
+<label>Transmission Score</label>
+<input type="number" step="0.1" name="score_transmission" value="{{ rel.score_transmission or '' }}">
+</div>
+<div>
+<label>Chassis Score</label>
+<input type="number" step="0.1" name="score_chassis" value="{{ rel.score_chassis or '' }}">
+</div>
+<div>
+<label>Electronics Score</label>
+<input type="number" step="0.1" name="score_electronics" value="{{ rel.score_electronics or '' }}">
+</div>
+<div>
+<label>Ease of Repair Score</label>
+<input type="number" step="0.1" name="score_ease_of_repair" value="{{ rel.score_ease_of_repair or '' }}">
+</div>
 </fieldset>
 {% endif %}
 

@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from motorgeek.core.models import Car, Performance, PowertrainICE, Reliability
 
+VALID_DIMENSIONS = ['engine', 'transmission', 'chassis', 'electronics', 'ease_of_repair']
+
 
 def calculate_power_to_weight(hp: float, weight_kg: float) -> float:
     if not weight_kg:
@@ -69,6 +71,20 @@ def rank_cars(session: Session, metric: str, limit: int = 20, ascending: bool = 
             .all()
         )
         return [(car, score, "most reliable" if not ascending else "least reliable") for car, score in results]
+    elif metric.startswith("reliability-"):
+        dim = metric.split("-", 1)[1]
+        if dim not in VALID_DIMENSIONS:
+            return []
+        col = getattr(Reliability, f'score_{dim}')
+        results = (
+            session.query(Car, col)
+            .join(Reliability)
+            .filter(col.isnot(None))
+            .order_by(col if not ascending else col.desc())
+            .limit(limit)
+            .all()
+        )
+        return [(car, score, f"most reliable {dim}" if not ascending else f"least reliable {dim}") for car, score in results]
     return []
 
 

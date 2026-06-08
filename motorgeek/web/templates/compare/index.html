@@ -162,6 +162,26 @@
     <tbody>
     {% set rel = {} %}{% for c in selected %}{% set r = rel_data[c.id] %}{% set _ = rel.update({c.id: r.reliability_score if r and r.reliability_score else none}) %}{% endfor %}
     {{ winner_row('Score', rel, False, '/100') }}
+    {% set eng = {} %}{% for c in selected %}{% set r = rel_data[c.id] %}{% set _ = eng.update({c.id: r.score_engine if r and r.score_engine is not none else none}) %}{% endfor %}
+    {% if eng.values()|select|list %}
+    {{ winner_row('Engine', eng, False, '/100') }}
+    {% endif %}
+    {% set trn = {} %}{% for c in selected %}{% set r = rel_data[c.id] %}{% set _ = trn.update({c.id: r.score_transmission if r and r.score_transmission is not none else none}) %}{% endfor %}
+    {% if trn.values()|select|list %}
+    {{ winner_row('Transmission', trn, False, '/100') }}
+    {% endif %}
+    {% set chs = {} %}{% for c in selected %}{% set r = rel_data[c.id] %}{% set _ = chs.update({c.id: r.score_chassis if r and r.score_chassis is not none else none}) %}{% endfor %}
+    {% if chs.values()|select|list %}
+    {{ winner_row('Chassis', chs, False, '/100') }}
+    {% endif %}
+    {% set elc = {} %}{% for c in selected %}{% set r = rel_data[c.id] %}{% set _ = elc.update({c.id: r.score_electronics if r and r.score_electronics is not none else none}) %}{% endfor %}
+    {% if elc.values()|select|list %}
+    {{ winner_row('Electronics', elc, False, '/100') }}
+    {% endif %}
+    {% set eor = {} %}{% for c in selected %}{% set r = rel_data[c.id] %}{% set _ = eor.update({c.id: r.score_ease_of_repair if r and r.score_ease_of_repair is not none else none}) %}{% endfor %}
+    {% if eor.values()|select|list %}
+    {{ winner_row('Ease of Repair', eor, False, '/100') }}
+    {% endif %}
     </tbody>
     </table>
     </div>
