@@ -1,0 +1,2 @@
+﻿INSERT INTO powertrain_ice (car_id, source, engine_layout, displacement_cc, cylinders, aspiration, horsepower_bhp, torque_nm, fuel_system, transmission_type, gear_count, drivetrain, curb_weight_kg, fuel_tank_capacity_l, is_hybrid)
+VALUES (164, 'wikipedia+ultimatespecs', '3.0L turbo I6 B58 Gen1 (740i)', 2998.0, 6, 'single turbo', 322.0, 450.0, 'direct injection', '8-speed automatic', 8, 'RWD/xDrive', 1800.0, 78.0, 0);

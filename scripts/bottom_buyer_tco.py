@@ -64,6 +64,7 @@ def estimate_used_price(car):
     msrp = car.get('msrp', 50000)
     score = car.get('score', 70)
     hp = car.get('hp', 300)
+    q_score = car.get('q_score')
     
     # Base depreciation curve (percentage of MSRP retained)
     # Reliable cars hold value better
@@ -106,6 +107,11 @@ def estimate_used_price(car):
     if 'sl 600 r129' in name: special_adj = 0.25
     if '996' in name: special_adj = 0.15  # 996 turbo starting to appreciate
     if 'polestar' in name or 'v60' in name: special_adj = 0.05  # Enthusiast niche
+    
+    # Q-factor build quality: better-built cars retain value
+    if q_score is not None:
+        if q_score >= 80: special_adj += 0.05  # better value retention
+        elif q_score < 60: special_adj -= 0.05  # poor aging = faster depreciation
     
     pct = min(base_pct + reliability_adj + hp_adj + special_adj, 0.95)
     return max(round(msrp * pct, -2), 2000)
@@ -158,6 +164,7 @@ def risk_buffer(car):
     """Expected value of worst-case failure over 30K miles"""
     score = car.get('score', 70)
     ease = car.get('ease', 70)
+    q_score = car.get('q_score')
     name = car.get('name', '').lower()
     
     # Base probability of catastrophic failure in 30K miles
@@ -169,6 +176,11 @@ def risk_buffer(car):
     elif score >= 70: prob = 0.20
     elif score >= 65: prob = 0.25
     else: prob = 0.35
+    
+    # Q-factor build quality: better-built = fewer surprises
+    if q_score is not None:
+        if q_score >= 80: prob -= 0.03
+        elif q_score < 60: prob += 0.05
     
     # Ease of repair affects cost, not probability
     ease = car.get('ease', 70)
@@ -211,11 +223,13 @@ if os.path.exists(db_path):
                ct.fuel_econ_city_mpg, ct.fuel_econ_hwy_mpg, ct.annual_maintenance_est,
                ct.msrp_original,
                pi.horsepower_bhp, pi.displacement_cc, pi.aspiration, pi.curb_weight_kg,
-               pi.fuel_system, pi.transmission_type
+               pi.fuel_system, pi.transmission_type,
+               bq.q_score
         FROM cars c
         LEFT JOIN reliability r ON r.car_id = c.id
         LEFT JOIN cost_to_own ct ON ct.car_id = c.id
         LEFT JOIN powertrain_ice pi ON pi.car_id = c.id
+        LEFT JOIN build_quality bq ON bq.car_id = c.id
         WHERE r.reliability_score IS NOT NULL
         AND pi.horsepower_bhp IS NOT NULL
         AND ct.fuel_econ_city_mpg IS NOT NULL
@@ -245,6 +259,7 @@ if os.path.exists(db_path):
             'weight': row['curb_weight_kg'] or 1700,
             'fuel_system': (row['fuel_system'] or '').lower(),
             'trans': (row['transmission_type'] or '').lower(),
+            'q_score': row['q_score'],
         })
 
 # If no file, use hardcoded data
@@ -279,6 +294,14 @@ for c in cars_raw:
     if age > 15: maint_30k *= 1.3  # older cars need more
     if age > 25: maint_30k *= 1.2  # classics even more
     
+    # Q-factor build quality adjustment
+    q = c.get('q_score')
+    if q is not None:
+        if q >= 80:
+            maint_30k *= 0.90  # well-built cars need less catchup
+        elif q < 70:
+            maint_30k *= 1.15  # poor build = more deferred maintenance
+    
     risk = risk_buffer(c)
     
     total = used + fuel_cost + maint_30k + risk
@@ -298,6 +321,7 @@ for c in cars_raw:
         'make': c['make'],
         'year': f"{c['year_start']}-{c.get('year_end', '?')}",
         'score': c['score'],
+        'q_score': c.get('q_score'),
         'hp': int(c['hp']),
         'mpg': round(mpg, 1),
         'fuel': 'regular' if fp < 3.50 else 'premium',
@@ -317,32 +341,34 @@ for c in cars_raw:
 # Sort by cost_per_mile (best value first)
 results.sort(key=lambda x: x['cost_per_mile'])
 
-print("=" * 130)
+print("=" * 136)
 print("BOTTOM-BUYER TCO: ALL SCORED CARS (250+ HP) -- Ranked by $/mile")
 print("Strategy: Buy at 70% of max reliable miles, extract 30K more miles")
-print("=" * 130)
+print("=" * 136)
 print()
 
 # Print header
-hdr = f"{'#':>2} {'Car':30s} {'Year':>10s} {'Score':>5s} {'HP':>5s} {'MPG':>5s} {'Fuel':>7s} {'Buy$':>7s} {'Buy@':>6s} {'Max':>5s} {'Gas':>5s} {'Mnt':>5s} {'Risk':>5s} {'Total':>7s} {'$/mi':>5s} {'HP/$':>6s} {'Fun':>7s}"
+hdr = f"{'#':>2} {'Car':30s} {'Year':>10s} {'Score':>5s} {'Q':>4s} {'HP':>5s} {'MPG':>5s} {'Fuel':>7s} {'Buy$':>7s} {'Buy@':>6s} {'Max':>5s} {'Gas':>5s} {'Mnt':>5s} {'Risk':>5s} {'Total':>7s} {'$/mi':>5s} {'HP/$':>6s} {'Fun':>7s}"
 print(hdr)
-print("-" * 130)
+print("-" * 136)
 
 for i, r in enumerate(results, 1):
     flag = " " if r['reliable'] else "!"  # ! = outside reliable window
-    print(f"{flag}{i:>2} {r['name']:30s} {r['year']:>10s} {r['score']:>5.1f} {r['hp']:>5} {r['mpg']:>5.1f} {r['fuel']:>7s} ${r['used_price']:>6,} {r['buy_odo']:>6s} {r['max_life']:>5s} ${r['fuel_30k']:>4,} ${r['maint_30k']:>4,} ${r['risk']:>4,} ${r['total']:>6,} ${r['cost_per_mile']:>4.2f} {r['hp_per_dollar']:>6.1f} {r['fun']:>7.1f}")
+    q_str = f"{r['q_score']:.0f}" if r['q_score'] is not None else "--"
+    print(f"{flag}{i:>2} {r['name']:30s} {r['year']:>10s} {r['score']:>5.1f} {q_str:>4s} {r['hp']:>5} {r['mpg']:>5.1f} {r['fuel']:>7s} ${r['used_price']:>6,} {r['buy_odo']:>6s} {r['max_life']:>5s} ${r['fuel_30k']:>4,} ${r['maint_30k']:>4,} ${r['risk']:>4,} ${r['total']:>6,} ${r['cost_per_mile']:>4.2f} {r['hp_per_dollar']:>6.1f} {r['fun']:>7.1f}")
 
 print()
 print("Legend: ! = outside reliable window (30K more exceeds max life estimate)")
+print("        Q = build quality score (0-100, -- = not scored)")
 print("        Buy$ = estimated used purchase price at bottom of depreciation")
 print("        Buy@ = recommended odometer to buy at (70% of max reliable miles)")
 print("        HP/$ = horsepower per dollar-per-mile (more = better)")
 print("        Fun = reliability * HP / $/mile (the holy trinity)")
 
 print()
-print("=" * 130)
+print("=" * 136)
 print("TOP 10 BY FUN FACTOR (reliability * HP / $ per mile)")
-print("=" * 130)
+print("=" * 136)
 print()
 
 by_fun = sorted(results, key=lambda x: x['fun'], reverse=True)[:10]
@@ -350,9 +376,9 @@ for i, r in enumerate(by_fun, 1):
     print(f"{i:>2}. {r['name']:30s} | Score: {r['score']:.1f} | HP: {r['hp']} | ${r['cost_per_mile']:.2f}/mi | Fun: {r['fun']:.1f}")
 
 print()
-print("=" * 130)
+print("=" * 136)
 print("TOP 10 CHEAPEST THRILLS (lowest $/mile with 250+ HP)")
-print("=" * 130)
+print("=" * 136)
 print()
 
 cheap_thrills = sorted([r for r in results if r['hp'] >= 250 and r['reliable']], key=lambda x: x['cost_per_mile'])[:10]

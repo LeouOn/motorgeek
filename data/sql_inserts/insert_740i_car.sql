@@ -1,0 +1,2 @@
+﻿INSERT INTO cars (id, make, model, generation, year_start, year_end, era_tag, body_style, country, production_units, description, image_paths, created_at, character, family, variant)
+VALUES (164, 'BMW', '7 Series', 'G11/G12', 2017, 2019, 'modern', 'sedan', 'Germany', NULL, 'BMW 740i G11 pre-LCI with B58 Gen1 3.0L turbo I6. Flagship luxury sedan with Carbon Core CFRP construction. RWD standard, xDrive optional. Avoids B58TU oil pump issue. C&D 40K mile test: zero unscheduled repairs, 26 mpg observed.', '[]', datetime('now'), 'luxury', '7 Series', '740i B58');
