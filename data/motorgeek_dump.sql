@@ -185,6 +185,11 @@ INSERT INTO cars VALUES(172,'Lincoln','Aviator','CD6',2020,2024,'modern','SUV','
 INSERT INTO cars VALUES(173,'Lincoln','Nautilus','CD4',2019,2023,'modern','SUV','USA',NULL,NULL,'[]','2026-06-10 23:31:44','luxury','Nautilus','2.7T AWD');
 INSERT INTO cars VALUES(174,'Lincoln','Corsair','C2',2020,2024,'modern','SUV','USA',NULL,NULL,'[]','2026-06-10 23:31:44','luxury','Corsair','2.3T AWD');
 INSERT INTO cars VALUES(175,'Cadillac','Escalade','K2 4th gen',2015,2020,'modern','SUV','USA',NULL,NULL,'[]','2026-06-10 23:31:44','luxury','Escalade','6.2L V8 L86');
+INSERT INTO cars VALUES(176,'BMW','7 Series','E38',1995,2001,'modern','sedan','Germany',NULL,NULL,'[]','2026-06-12 18:22:30','luxury','7 Series','740i');
+INSERT INTO cars VALUES(177,'Audi','A8','D3',2003,2010,'modern','sedan','Germany',NULL,NULL,'[]','2026-06-12 18:22:30','luxury','A8','4.2 FSI quattro');
+INSERT INTO cars VALUES(178,'Mercedes-Benz','S-Class','W126',1980,1991,'classic','sedan','Germany',NULL,NULL,'[]','2026-06-12 18:22:30','luxury','S-Class','560SEL');
+INSERT INTO cars VALUES(179,'Mercedes-Benz','S-Class','W221',2006,2013,'modern','sedan','Germany',NULL,NULL,'[]','2026-06-12 18:22:30','luxury','S-Class','S550');
+INSERT INTO cars VALUES(180,'Audi','A8','D4',2011,2017,'modern','sedan','Germany',NULL,NULL,'[]','2026-06-12 18:22:30','luxury','A8','3.0 TFSI quattro');
 CREATE TABLE comparison_sessions (
 	id INTEGER NOT NULL, 
 	name VARCHAR(200), 
@@ -598,6 +603,11 @@ INSERT INTO reliability VALUES(324,172,'librarian+analysis',66.4000000000000056,
 INSERT INTO reliability VALUES(325,173,'librarian+analysis',67.2000000000000028,'[]',NULL,NULL,NULL,NULL,'[]',NULL,68.0,58.0,76.0,66.0,68.0,'[]');
 INSERT INTO reliability VALUES(326,174,'librarian+analysis',70.0,'[]',NULL,NULL,NULL,NULL,'[]',NULL,72.0,60.0,78.0,68.0,72.0,'[]');
 INSERT INTO reliability VALUES(327,175,'librarian+analysis',66.0,'[]',NULL,NULL,NULL,NULL,'[]',NULL,66.0,60.0,70.0,64.0,70.0,'[]');
+INSERT INTO reliability VALUES(328,176,'librarian+analysis',74.5999999999999943,'["cooling system failures","thrust bushing wear"]',NULL,NULL,NULL,NULL,'["nikasil bore wear: early M62 blocks susceptible to sulfur damage in fuel","DISA valve: intake manifold adjuster can fail causing rough idle"]',NULL,72.0,80.0,78.0,75.0,68.0,'["engine: M62 cooling and Nikasil issues lower engine score","transmission: ZF 5HP reliable with fluid changes","chassis: E38 chassis robust with minor bushing wear","electronics: EWS and module aging typical for era","ease_of_repair: decent access but some specialty tools needed"]');
+INSERT INTO reliability VALUES(329,177,'librarian+analysis',70.2000000000000028,'["air suspension failures","timing chain guides"]',NULL,NULL,NULL,NULL,'["4.2 V8 chain tensioners: plastic guides degrade requiring engine-out service","air suspension: compressor and air bags fail with age"]',NULL,76.0,82.0,68.0,65.0,60.0,'["engine: strong V8 but chain guide failure is costly","transmission: ZF 6HP generally reliable","chassis: air suspension is Achilles heel","electronics: MMI and module failures common","ease_of_repair: ASF space frame limits access"]');
+INSERT INTO reliability VALUES(330,178,'librarian+analysis',82.2000000000000028,'["vacuum system leaks","climate control servo pods"]',NULL,NULL,NULL,NULL,'["AC servo pods: vacuum-operated flaps degrade causing HVAC issues","wiring harness: biodegradable insulation used in early 90s units"]',NULL,85.0,88.0,73.0,83.0,82.0,'["engine: M117 legendary durability","transmission: 4-speed auto nearly indestructible","chassis: W126 tanks but bushings age","electronics: simple systems age well","ease_of_repair: excellent parts availability and simple layout"]');
+INSERT INTO reliability VALUES(331,179,'librarian+analysis',67.0,'["Airmatic suspension","SBC brake system"]',NULL,NULL,NULL,NULL,'["Airmatic: strut and compressor failures expensive to repair","SBC brake-by-wire: pump module failure disables braking","M273 camshaft adjuster: early units had cam gear wear"]',NULL,68.0,74.0,65.0,62.0,66.0,'["engine: M273 cam adjuster issues known","transmission: 7G-Tronic generally robust","chassis: Airmatic and SBC are major failure points","electronics: COMAND and sensor failures prevalent","ease_of_repair: complex systems require STAR diagnosis"]');
+INSERT INTO reliability VALUES(332,180,'librarian+analysis',71.4000000000000056,'["oil consumption","water pump failures"]',NULL,NULL,NULL,NULL,'["3.0 TFSI supercharger: Eaton TVS unit reliable but oil consumption can be high","thermal management: water pump and thermostat housing cracks common"]',NULL,75.0,85.0,68.0,67.0,62.0,'["engine: supercharged V6 solid but oil consumption noted","transmission: ZF 8HP excellent reliability","chassis: aluminum ASF limits repair options","electronics: MMI and sensor aging typical","ease_of_repair: aluminum construction limits DIY"]');
 CREATE TABLE consumables_and_specs (
 	id INTEGER NOT NULL, 
 	car_id INTEGER NOT NULL, 
@@ -1339,6 +1349,11 @@ INSERT INTO powertrain_ice VALUES(210,172,NULL,'3.0L twin-turbo V6 Nano EcoBoost
 INSERT INTO powertrain_ice VALUES(211,173,NULL,'2.7L twin-turbo V6 Nano EcoBoost',2700.0,NULL,NULL,335.0,NULL,515.0,NULL,NULL,NULL,'direct injection','8-speed automatic',8,'AWD',2050.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 INSERT INTO powertrain_ice VALUES(212,174,NULL,'2.3L turbo I4 EcoBoost',2300.0,NULL,NULL,295.0,NULL,420.0,NULL,NULL,NULL,'direct injection','8-speed automatic',8,'AWD',1835.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 INSERT INTO powertrain_ice VALUES(213,175,NULL,'6.2L OHV V8 L86 EcoTec3',6200.0,NULL,NULL,420.0,NULL,624.0,NULL,NULL,NULL,'direct injection','8-speed automatic',8,'4WD',2600.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO powertrain_ice VALUES(214,176,'librarian+analysis','4.4L V8 M62B44',4398.0,8,'naturally aspirated',282.0,NULL,440.0,NULL,NULL,NULL,'MPI','5-speed automatic',5,'RWD',1845.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO powertrain_ice VALUES(215,177,'librarian+analysis','4.2L V8 FSI BFL',4163.0,8,'naturally aspirated',350.0,NULL,440.0,NULL,NULL,NULL,'FSI direct injection','6-speed automatic',6,'quattro AWD',1785.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO powertrain_ice VALUES(216,178,'librarian+analysis','5.6L V8 M117.968',5547.0,8,'naturally aspirated',238.0,NULL,372.0,NULL,NULL,NULL,'CFI','4-speed automatic',4,'RWD',1745.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO powertrain_ice VALUES(217,179,'librarian+analysis','5.5L V8 M273',5461.0,8,'naturally aspirated',382.0,NULL,530.0,NULL,NULL,NULL,'port injection','7-speed automatic',7,'RWD',1975.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO powertrain_ice VALUES(218,180,'librarian+analysis','3.0L supercharged V6 CGWA',2995.0,6,'supercharged',310.0,NULL,440.0,NULL,NULL,NULL,'FSI direct injection','8-speed automatic',8,'quattro AWD',1810.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 CREATE TABLE alembic_version (
 	version_num VARCHAR(32) NOT NULL, 
 	CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
@@ -3140,4 +3155,9 @@ INSERT INTO build_quality VALUES(181,172,76.7999999999999971,80.0,83.0,83.0,74.0
 INSERT INTO build_quality VALUES(182,173,75.2999999999999971,76.0,80.0,80.0,73.0,67.0,76.0,'','','','','','','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL);
 INSERT INTO build_quality VALUES(183,174,73.2000000000000028,74.0,76.0,78.0,72.0,65.0,74.0,'','','','','','','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL);
 INSERT INTO build_quality VALUES(184,175,72.5,78.0,78.0,72.0,75.0,62.0,70.0,'','','','','','','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL);
+INSERT INTO build_quality VALUES(185,176,81.5,82.0,85.0,86.0,80.0,74.0,82.0,'','','','','','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL);
+INSERT INTO build_quality VALUES(186,177,81.2000000000000028,88.0,86.0,87.0,82.0,64.0,80.0,'','','','','','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL);
+INSERT INTO build_quality VALUES(187,178,85.7999999999999971,78.0,90.0,92.0,85.0,80.0,90.0,'','','','','','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL);
+INSERT INTO build_quality VALUES(188,179,78.7999999999999971,83.0,88.0,84.0,82.0,58.0,78.0,'','','','','','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL);
+INSERT INTO build_quality VALUES(189,180,82.7000000000000028,89.0,89.0,86.0,84.0,66.0,82.0,'','','','','','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL);
 COMMIT;
