@@ -79,29 +79,29 @@ def gather_context(db, car_id):
 
 
 def try_llm_story(ctx):
-    """Attempt to call the LLM for a creative story. Returns None if no API key."""
-    try:
-        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        from motorgeek.core.llm import LLMClient
-        client = LLMClient()
+    """Call the LLM for a creative story. Tries Anthropic (Z.AI), then OpenAI, then returns None."""
+    car_desc = f"{ctx['make']} {ctx['model']} {ctx.get('variant','')}"
+    engine = ctx.get('engine_layout', 'unknown')
+    engine_code = ctx.get('engine_code', 'unknown')
+    siblings = ', '.join(f"{s['make']} {s['model']}" for s in ctx.get('engine_siblings', []))
+    family = ', '.join(f"{f['make']} {f['model']} {f.get('generation','')}" for f in ctx.get('family_members', []))
 
-        car_desc = f"{ctx['make']} {ctx['model']} {ctx.get('variant','')}"
-        engine = ctx.get('engine_layout', 'unknown')
-        engine_code = ctx.get('engine_code', 'unknown')
-        siblings = ', '.join(f"{s['make']} {s['model']}" for s in ctx.get('engine_siblings', []))
-        family = ', '.join(f"{f['make']} {f['model']} {f.get('generation','')}" for f in ctx.get('family_members', []))
+    failures_text = ''
+    for fp in ctx.get('failures', []):
+        sev = ['', 'cosmetic', 'nuisance', 'moderate', 'major', 'catastrophic'][fp.get('severity', 3)]
+        name = fp['name'].replace('_', ' ')
+        cost = f"${fp.get('cost_low', 0)}" if fp.get('cost_low') else ''
+        if fp.get('cost_high') and fp['cost_high'] != fp.get('cost_low'):
+            cost += f"-${fp['cost_high']}"
+        failures_text += f"  [{sev}] {name}: {cost}. {fp.get('description', '')}\n"
 
-        failures_text = ''
-        for fp in ctx.get('failures', []):
-            sev = ['', 'cosmetic', 'nuisance', 'moderate', 'major', 'catastrophic'][fp.get('severity',3)]
-            failures_text += f"  [{sev}] {fp['name'].replace('_',' ')}: {fp.get('description','')}\n"
+    prompt = f"""Write a "dependent origination story" for this car. This is a philosophical engineering meditation that traces what the car actually IS — not as a single object, but as an assemblage of components from different origins.
 
-        prompt = f"""Write a "dependent origination story" for this car. This is a philosophical engineering meditation that traces what the car actually IS — not as a single object, but as an assemblage of components from different origins.
-
-The car: {car_desc} ({ctx.get('year_start','')})
+The car: {car_desc} ({ctx.get('year_start', '')})
 Engine: {engine} (code: {engine_code})
 Engine also appears in: {siblings or 'no other cars in database'}
 Family lineage: {family or 'none documented'}
+MSRP: ${ctx.get('msrp_original', 0):,.0f}
 Known failures:
 {failures_text}
 
@@ -114,18 +114,69 @@ Write in a contemplative, precise style. Cover:
 
 End with a single closing line. Be specific with the data above. Be poetic but grounded in engineering reality. 400-600 words."""
 
-        response = client.client.chat.completions.create(
-            model=client.model,
-            messages=[
-                {"role": "system", "content": "You are an automotive philosopher-engineer who sees cars as temporary assemblages of shared components. You write with precision and wonder."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=1000,
-            temperature=0.8,
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return None
+    system_msg = "You are an automotive philosopher-engineer who sees cars as temporary assemblages of shared components. You write with precision and wonder, like a Buddhist mechanic who loves wrenches."
+
+    # Try Anthropic (Z.AI endpoint) first
+    try:
+        import os
+        if os.environ.get('ANTHROPIC_AUTH_TOKEN'):
+            import anthropic
+            client = anthropic.Anthropic(
+                api_key=os.environ['ANTHROPIC_AUTH_TOKEN'],
+                base_url=os.environ.get('ANTHROPIC_BASE_URL', 'https://api.z.ai/api/anthropic')
+            )
+            resp = client.messages.create(
+                model='glm-4.6',
+                max_tokens=1200,
+                system=system_msg,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return resp.content[0].text
+    except Exception:
+        pass
+
+    # Try OpenAI-compatible (ZAI_API_KEY) second
+    try:
+        import os
+        if os.environ.get('ZAI_API_KEY'):
+            from openai import OpenAI
+            client = OpenAI(
+                api_key=os.environ['ZAI_API_KEY'],
+                base_url='https://api.z.ai/api/paas/v4/'
+            )
+            resp = client.chat.completions.create(
+                model='glm-4.6',
+                max_tokens=1200,
+                temperature=0.8,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return resp.choices[0].message.content
+    except Exception:
+        pass
+
+    # Try DeepSeek / OpenAI from config
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from motorgeek.core.llm import LLMClient
+        client = LLMClient()
+        if client.provider == "openai" or client.provider == "deepseek":
+            resp = client._get_client().chat.completions.create(
+                model=client.model,
+                max_tokens=1200,
+                temperature=0.8,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return resp.choices[0].message.content
+    except Exception:
+        pass
+
+    return None
 
 
 def template_story(ctx):
