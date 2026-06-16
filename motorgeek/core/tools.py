@@ -228,6 +228,49 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_depreciation_projection",
+            "description": "Project the 20-year depreciation curve for a car, identifying sweet spot, caution, and floor zones. Shows when to buy and projected value at each age.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "car_id": {"type": "integer", "description": "Car ID to project"},
+                    "years": {"type": "integer", "description": "Number of years to project (default 20)"},
+                },
+                "required": ["car_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_ppi_checklist",
+            "description": "Generate a pre-purchase inspection checklist from known failure data. Shows severity-ranked failure points, repair costs, and preventive fixes with ROI.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "car_id": {"type": "integer", "description": "Car ID to generate checklist for"},
+                },
+                "required": ["car_id"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_origination_story",
+            "description": "Generate a dependent origination story for a car — traces what the car actually IS as an assemblage of shared components, engine lineage, family history, and engineering karma.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "car_id": {"type": "integer", "description": "Car ID to trace"},
+                },
+                "required": ["car_id"],
+            },
+        },
+    },
 ]
 
 # ── Tool executor ────────────────────────────────────────────────────────────
@@ -256,6 +299,9 @@ def execute_tool(
         "refresh_market_price": _handle_refresh_price,
         "enrich_car_data": _handle_enrich,
         "save_ingest_data": _handle_save,
+        "get_depreciation_projection": _handle_depreciation,
+        "get_ppi_checklist": _handle_ppi,
+        "get_origination_story": _handle_origination,
     }
 
     handler = handlers.get(tool_name)
@@ -846,3 +892,93 @@ def _handle_save(db: Session, args: dict, session_id: Optional[int] = None) -> d
         }
     except Exception as e:
         return {"error": f"Save failed: {e}"}
+
+
+def _handle_depreciation(db: Session, args: dict, _session_id: Optional[int] = None) -> dict:
+    """Project depreciation curve and buying window for a car."""
+    import subprocess, json as _json
+    car_id = args.get("car_id")
+    if not car_id:
+        return {"error": "car_id required"}
+
+    try:
+        result = subprocess.run(
+            ["python", "scripts/depreciation_projection.py", str(car_id)],
+            capture_output=True, text=True, timeout=30,
+            cwd=str(Path(__file__).parent.parent.parent),
+        )
+        return {"output": result.stdout, "car_id": car_id}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _handle_ppi(db: Session, args: dict, _session_id: Optional[int] = None) -> dict:
+    """Generate PPI checklist from failure_points data."""
+    car_id = args.get("car_id")
+    if not car_id:
+        return {"error": "car_id required"}
+
+    from motorgeek.core.models import Car
+    car = db.query(Car).filter(Car.id == car_id).first()
+    if not car:
+        return {"error": f"Car {car_id} not found"}
+
+    # Query failure_points directly
+    from sqlalchemy import text
+    failures = db.execute(text(
+        "SELECT * FROM failure_points WHERE car_id = :cid ORDER BY severity DESC"
+    ), {"cid": car_id}).fetchall()
+
+    if not failures:
+        return {"car": f"{car.make} {car.model}", "message": "No structured failure data yet."}
+
+    result = []
+    for f in failures:
+        sev_labels = ['', 'cosmetic', 'nuisance', 'moderate', 'major', 'catastrophic']
+        result.append({
+            "name": f[1].replace('_', ' '),  # failure_name
+            "component": f[3],  # component
+            "severity": sev_labels[f[4]],  # severity
+            "severity_num": f[4],
+            "mileage": f[5],
+            "cost_low": f[6],
+            "cost_high": f[7],
+            "preventive": bool(f[8]),
+            "prevention_cost": f[9],
+            "description": f[11],
+        })
+
+    preventive = [r for r in result if r["preventive"]]
+    total_prev = sum(r["prevention_cost"] or 0 for r in preventive)
+    total_risk = sum(r["cost_high"] or 0 for r in result if r["severity_num"] >= 4)
+
+    return {
+        "car": f"{car.make} {car.model} {car.variant or ''}",
+        "failures": result,
+        "summary": {
+            "total_failures": len(result),
+            "major_risks": len([r for r in result if r["severity_num"] >= 4]),
+            "preventive_fixes": len(preventive),
+            "total_prevention_cost": total_prev,
+            "total_risk_mitigated": total_risk,
+            "blended_roi": round(total_risk / total_prev, 1) if total_prev > 0 else 0,
+        },
+    }
+
+
+def _handle_origination(db: Session, args: dict, _session_id: Optional[int] = None) -> dict:
+    """Generate dependent origination story — what the car actually IS as an assemblage."""
+    import subprocess
+    car_id = args.get("car_id")
+    if not car_id:
+        return {"error": "car_id required"}
+
+    try:
+        result = subprocess.run(
+            ["python", "scripts/origination_story.py", str(car_id)],
+            capture_output=True, text=True, timeout=30,
+            cwd=str(Path(__file__).parent.parent.parent),
+        )
+        return {"story": result.stdout, "car_id": car_id}
+    except Exception as e:
+        return {"error": str(e)}
