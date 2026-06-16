@@ -126,7 +126,7 @@ End with a single closing line. Be specific with the data above. Be poetic but g
                 base_url=os.environ.get('ANTHROPIC_BASE_URL', 'https://api.z.ai/api/anthropic')
             )
             resp = client.messages.create(
-                model='glm-4.6',
+                model='glm-5.2',
                 max_tokens=1200,
                 system=system_msg,
                 messages=[{"role": "user", "content": prompt}]
@@ -145,7 +145,7 @@ End with a single closing line. Be specific with the data above. Be poetic but g
                 base_url='https://api.z.ai/api/paas/v4/'
             )
             resp = client.chat.completions.create(
-                model='glm-4.6',
+                model='glm-5.2',
                 max_tokens=1200,
                 temperature=0.8,
                 messages=[
