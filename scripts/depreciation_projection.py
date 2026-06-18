@@ -197,7 +197,12 @@ def main():
         if age_now > high["year"]:
             print(f"\n--- SWEET SPOT: age {low['year']}-{high['year']} (years {sweet_start_yr}-{sweet_end_yr})")
             print(f"   Projected value at time: ${low['value']:,} - ${high['value']:,}")
-            print(f"   ** Sweet spot was in the past -- this car is now a collector asset")
+            if age_now > 20:
+                print(f"   Sweet spot was in the past -- this car may be appreciating as a collector")
+            elif age_now > 15:
+                print(f"   Sweet spot was in the past -- near the floor, maintenance costs dominate")
+            else:
+                print(f"   Sweet spot was in the past -- now in caution zone (maintenance cliffs ahead)")
             print(f"   Current age: {age_now}. Appreciation may be underway.")
         else:
             print(f"\n--- SWEET SPOT: age {low['year']}-{high['year']} (years {sweet_start_yr}-{sweet_end_yr})")

@@ -1,6 +1,7 @@
 """Tool definitions and executor for the MotorGeek agent."""
 
 import json
+from pathlib import Path
 from typing import Optional, Any
 
 from sqlalchemy.orm import Session
@@ -670,7 +671,7 @@ def _handle_suggest(db: Session, args: dict, _session_id: Optional[int] = None) 
                 {
                     "id": other.id,
                     "name": f"{other.make} {other.model} ({other.generation or 'base'})",
-                    "reason": _reason(target_era, target_body, target_hp, other),
+                    "reason": _reason(target_era, target_body, target_hp, other, db),
                     "score": score,
                 }
             )
@@ -679,7 +680,7 @@ def _handle_suggest(db: Session, args: dict, _session_id: Optional[int] = None) 
     return {"reference_car": f"{car.make} {car.model}", "suggestions": suggestions[:5]}
 
 
-def _reason(target_era, target_body, target_hp, other):
+def _reason(target_era, target_body, target_hp, other, db):
     parts = []
     if target_era and other.era_tag == target_era:
         parts.append(f"same era ({target_era})")
@@ -687,8 +688,7 @@ def _reason(target_era, target_body, target_hp, other):
         parts.append(f"same body ({target_body})")
     if target_hp:
         other_ice = (
-            get_session()
-            .query(PowertrainICE)
+            db.query(PowertrainICE)
             .filter(PowertrainICE.car_id == other.id)
             .first()
         )
@@ -936,7 +936,7 @@ def _handle_ppi(db: Session, args: dict, _session_id: Optional[int] = None) -> d
     for f in failures:
         sev_labels = ['', 'cosmetic', 'nuisance', 'moderate', 'major', 'catastrophic']
         result.append({
-            "name": f[1].replace('_', ' '),  # failure_name
+            "name": f[2].replace('_', ' '),  # failure_name
             "component": f[3],  # component
             "severity": sev_labels[f[4]],  # severity
             "severity_num": f[4],
