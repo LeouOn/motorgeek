@@ -14,4 +14,8 @@ __pycache__/
 dist/
 build/
 .omo/
+.reasonix/
 scripts/full_audit.txt
+scripts/*.bak*
+*.bak_*
+data/motorgeek_dump_*.sql

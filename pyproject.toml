@@ -17,6 +17,7 @@ dependencies = [
     "httpx",
     "rich>=13.0",
     "click",
+    "mcp>=1.0",
 ]
 
 [project.scripts]

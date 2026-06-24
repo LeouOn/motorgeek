@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "motorgeek": {
+      "command": "python",
+      "args": ["-m", "motorgeek.mcp_server"],
+      "cwd": "."
+    }
+  }
+}

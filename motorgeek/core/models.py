@@ -594,6 +594,13 @@ class Dimensions(Base):
     track_rear_mm: Mapped[Optional[int]] = mapped_column(Integer)
     front_overhang_mm: Mapped[Optional[int]] = mapped_column(Integer)
     rear_overhang_mm: Mapped[Optional[int]] = mapped_column(Integer)
+    seat_count: Mapped[Optional[int]] = mapped_column(Integer)
+    cargo_volume_liters_seats_down: Mapped[Optional[float]] = mapped_column(Float)
+    front_legroom_mm: Mapped[Optional[float]] = mapped_column(Float)
+    front_headroom_mm: Mapped[Optional[float]] = mapped_column(Float)
+    rear_legroom_mm: Mapped[Optional[float]] = mapped_column(Float)
+    rear_headroom_mm: Mapped[Optional[float]] = mapped_column(Float)
+    tow_capacity_kg: Mapped[Optional[int]] = mapped_column(Integer)
     source: Mapped[Optional[str]] = mapped_column(String(200))
     extra: Mapped[Optional[Any]] = mapped_column(JSON, default=dict)
 
