@@ -93,7 +93,7 @@ INSERT INTO cars VALUES(80,'Honda','Civic Type R','FK8',2017,2021,'10s','hatchba
 INSERT INTO cars VALUES(81,'Ford','Focus ST','third',2013,2018,'10s','hatchback','Germany',NULL,NULL,'[]','2026-06-01 02:05:59.374549','warm','Focus','ST',56);
 INSERT INTO cars VALUES(82,'Mercedes-Benz','CLS 550','C218 (second generation)',2012,2018,'10s','four-door coupe','Germany',NULL,NULL,'[]','2026-06-01 04:23:28.915967','hot','CLS','550',NULL);
 INSERT INTO cars VALUES(83,'Mercedes-Benz','E550','W212 (facelift)',2014,2016,'10s','sedan','Germany',NULL,NULL,'[]','2026-06-01 04:24:00.835542','hot','E-Class','E550',NULL);
-INSERT INTO cars VALUES(84,'Subaru','Legacy','BH5',2000,2004,'00s','sedan','Japan',NULL,NULL,'[]','2026-06-01 04:52:26.388783','eco','Legacy',NULL,NULL);
+INSERT INTO cars VALUES(84,'Subaru','Legacy','BH5',2000,2004,'00s','sedan','Japan',NULL,'2000 Subaru Legacy GT wagon with EJ251 2.5L SOHC NA flat-4. 165hp new, ~130-140hp effective at 191K mi. Head gaskets replaced by mechanic BEFORE purchase at 179K mi. AWD. 4-speed auto. Bought for ~. Driven on Santa Cruz mountain roads ? slow car fast = maximum engagement. EPD 233 (highest in database).','[]','2026-06-01 04:52:26.388783','eco','Legacy','GT wagon EJ251',NULL);
 INSERT INTO cars VALUES(85,'Chevrolet','Malibu Hybrid','ninth',2017,2019,'10s','sedan','USA',NULL,NULL,'[]','2026-06-01 04:52:45.602398','eco','Malibu',NULL,NULL);
 INSERT INTO cars VALUES(86,'Lexus','ES 350','XV40',2007,2012,'00s','sedan','Japan',NULL,NULL,'[]','2026-06-01 04:53:07.033479','luxury','ES',NULL,45);
 INSERT INTO cars VALUES(87,'Toyota','Camry','XV70 (V6)',2018,2024,'10s','sedan','Japan',NULL,NULL,'[]','2026-06-01 04:53:29.942393','warm','Camry',NULL,NULL);
@@ -402,6 +402,8 @@ INSERT INTO cars VALUES(390,'Kia','EV6','',2022,NULL,'modern','SUV','South Korea
 INSERT INTO cars VALUES(391,'Rivian','R1T','Gen 1',2022,NULL,'modern','truck','USA',NULL,NULL,'[]','2026-07-10 23:28:15','ev','R1T','Quad-motor 128 kWh',NULL);
 INSERT INTO cars VALUES(392,'Volvo','XC90','T8 PHEV',2016,NULL,'modern','SUV','Sweden',NULL,NULL,'[]','2026-07-10 23:28:15','luxury','XC90','2.0T + electric T8 AWD',NULL);
 INSERT INTO cars VALUES(393,'Porsche','Cayenne','E-Hybrid',2019,NULL,'modern','SUV','Germany',NULL,NULL,'[]','2026-07-10 23:28:15','luxury','Cayenne','3.0T V6 PHEV',NULL);
+INSERT INTO cars VALUES(394,'Hyundai','Equus','DH',2011,2016,'modern','sedan','South Korea',NULL,'Hyundai flagship luxury sedan. predecessor to Genesis G90. Same Tau 5.0L V8 (Wards 10 Best). Port injection (no carbon buildup). Hydraulic lash adjusters (maintenance-free). Pre-2012: ZF 6-speed (excellent). 2012+: Hyundai 8-speed. RWD. Air suspension optional. Extremely deep depreciation 窶・$60K+ new to $8-15K used. Interior quality genuinely premium. Parts availability is the existential risk.','[]','2026-07-13 23:35:51','luxury','Equus','5.0 V8 Ultimate',NULL);
+INSERT INTO cars VALUES(999,'Mercedes-Benz','190E','W201',1984,1993,'classic','sedan','Germany',NULL,'Character reference. 190E 2.3 8V NA - the Mercedes that taught a generation of enthusiasts that you do not need horsepower to have character. Compact RWD, 0-60 in 10.2s, limited-slip diff on sport models. The DNA that runs in every 3-Series today. 190E 2.3-16V had the Cosworth head and was the real one. W201 is the genesis of the 3-Series platform.','[]','2026-07-21 17:38:34','warm','190E','2.3L 8V',NULL);
 CREATE TABLE comparison_sessions (
 	id INTEGER NOT NULL, 
 	name VARCHAR(200), 
@@ -1243,6 +1245,8 @@ INSERT INTO reliability VALUES(522,390,'librarian+analysis',70.0,'["ICCU failure
 INSERT INTO reliability VALUES(523,391,'librarian+analysis',60.0,'["front motor bearings","12V battery","software OTA issues"]',NULL,NULL,NULL,NULL,'["Early build quality issues","teething problems"]',NULL,90.0,90.0,70.0,40.0,30.0,'null');
 INSERT INTO reliability VALUES(524,392,'librarian+analysis',65.0,'["ERAD rear motor","software issues","air suspension"]',NULL,NULL,NULL,NULL,'["Complex PHEV system"]',NULL,70.0,70.0,70.0,60.0,50.0,'null');
 INSERT INTO reliability VALUES(525,393,'librarian+analysis',71.5,'["PDK valve body","charge port","coolant leak"]',NULL,NULL,NULL,NULL,'["PHEV complexity","expensive repairs"]',NULL,75.0,80.0,80.0,65.0,55.0,'null');
+INSERT INTO reliability VALUES(526,394,'librarian+analysis',73.0,'["pvd_piston_rings_oil_consumption_pre2012","parts_backorder_tau_specific","air_suspension_optional","electronics_aging"]',NULL,NULL,NULL,NULL,'["tau_5.0: Same engine as Genesis G90. Wards 10 Best. Port injection = no carbon buildup. Hydraulic lash adjusters = maintenance-free. Roller cam followers superior to tappet-style. Pre-2012 PVD ring oil consumption was supplier defect, fixed late 2012. Forum teardowns pristine at 90K.","zf_6speed: Pre-2012 Equus got ZF 6-speed 窶・excellent, shared with BMW/Audi. 2012+ got Hyundai A8TR1 8-speed 窶・adequate, not as smooth.","parts_availability: CRITICAL. Equus was discontinued. Hyundai sold under 3K/year at peak US volume. 5.0-specific parts frequently backordered. Almost no aftermarket. This is the existential risk 窶・not the engine failing, but not being able to get parts when something peripheral breaks.","air_suspension: Optional. Same family as Genesis/Lexus air systems. Struts $800-1500/corner if available."] ',NULL,80.0,75.0,75.0,68.0,58.0,'["engine: Tau 5.0 is objectively Hyundais best engine. Port injected, hydraulic lash, Wards winner. Same as G90. Score matches G90 at 80","transmission: Pre-2012 ZF 6-speed scores higher (~82). 2012+ Hyundai 8-speed adequate but not ZF-tier. Blended score 75","chassis: BH platform is competent. Air suspension optional 窶・if equipped, adds risk. Base coil suspension is simpler and more durable","electronics: Aging 2011-era Hyundai infotainment and modules. Not as bad as German rivals but not Toyota-tier either","ease_of_repair: Parts availability is the killer. Same issue as G90. Low volume + discontinued nameplate = thin supply chain. Independent shops can work on the engine but cant get parts quickly"]');
+INSERT INTO reliability VALUES(527,999,'manual+analysis',85.0,'["wiring_harness_age","window_regulator","sunroof_rails"]',NULL,NULL,NULL,NULL,'["M102 2.3L is extremely reliable - 300K+ mi examples exist","4-speed auto is slow but reliable","Build quality is excellent - overengineered like all W201s","Rust is the main concern - check arches and jack points"]',NULL,90.0,85.0,80.0,60.0,75.0,'M102 2.3L 8V: 85-90 reliability. The old Mercedes reliability is real.');
 CREATE TABLE consumables_and_specs (
 	id INTEGER NOT NULL, 
 	car_id INTEGER NOT NULL, 
@@ -1519,6 +1523,8 @@ INSERT INTO cost_to_own VALUES(283,390,'librarian+analysis',42000.0,'USD',NULL,0
 INSERT INTO cost_to_own VALUES(284,391,'librarian+analysis',73000.0,'USD',NULL,0.0,0.0,800.0,NULL,NULL,NULL);
 INSERT INTO cost_to_own VALUES(285,392,'librarian+analysis',68000.0,'USD',NULL,55.0,58.0,900.0,NULL,NULL,NULL);
 INSERT INTO cost_to_own VALUES(286,393,'librarian+analysis',81000.0,'USD',NULL,46.0,47.0,1200.0,NULL,NULL,NULL);
+INSERT INTO cost_to_own VALUES(287,394,'librarian+analysis',58000.0,'USD',NULL,15.0,23.0,900.0,NULL,NULL,NULL);
+INSERT INTO cost_to_own VALUES(288,999,'manual+analysis',32000.0,'USD',NULL,18.0,24.0,600.0,NULL,NULL,NULL);
 CREATE TABLE market_history (
 	id INTEGER NOT NULL, 
 	car_id INTEGER NOT NULL, 
@@ -2025,7 +2031,7 @@ INSERT INTO powertrain_ice VALUES(78,80,'agentic-ingest','front transverse',2000
 INSERT INTO powertrain_ice VALUES(79,81,'agentic-ingest','front transverse',2000.0,4,'turbo',252.0,NULL,366.0,NULL,NULL,NULL,'direct injection','manual',6,'FWD',1450.0,NULL,NULL,NULL,NULL,0,NULL,NULL,350.0,'{}',188.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 INSERT INTO powertrain_ice VALUES(80,82,'wikipedia','front longitudinal',4663.0,8,'twin-turbo',402.0,NULL,600.0,NULL,NULL,NULL,'direct injection','automatic',7,'RWD',1870.0,NULL,NULL,NULL,NULL,0,NULL,NULL,350.0,'{}',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 INSERT INTO powertrain_ice VALUES(81,83,'wikipedia','front longitudinal',4663.0,8,'twin-turbo',402.0,NULL,600.0,NULL,NULL,NULL,'Direct injection','automatic',7,'RWD or 4MATIC',1850.0,NULL,NULL,NULL,NULL,0,NULL,NULL,430.0,'{}',300.0,NULL,NULL,NULL,NULL,10.6999999999999992,NULL,NULL,80.0,NULL,250.0,NULL,NULL);
-INSERT INTO powertrain_ice VALUES(82,84,'agentic-ingest','front longitudinal',2457.0,4,'naturally aspirated',165.0,NULL,162.0,NULL,NULL,NULL,'MPI (port injection)','manual',5,'AWD',1465.0,NULL,NULL,NULL,NULL,0,NULL,NULL,430.0,'{}',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO powertrain_ice VALUES(82,84,'agentic-ingest','2.5L H4 EJ251 SOHC NA',2457.0,4,'naturally aspirated',165.0,NULL,162.0,NULL,NULL,NULL,'MPI (port injection)','manual',5,'AWD',1465.0,NULL,NULL,NULL,NULL,0,NULL,NULL,430.0,'{}',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'EJ251');
 INSERT INTO powertrain_ice VALUES(83,85,'Edmunds/CarsDirect - 2017 Malibu Hybrid','front transverse',1796.0,4,'naturally aspirated',182.0,5000,175.0,4750,NULL,NULL,'hybrid','CVT',NULL,'FWD',1550.0,NULL,NULL,NULL,NULL,1,NULL,NULL,430.0,'{}',136.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 INSERT INTO powertrain_ice VALUES(84,86,'agentic-ingest','front transverse',3456.0,6,'naturally aspirated',272.0,NULL,330.0,NULL,NULL,NULL,'port injection','6-speed automatic (U660E)',6,'FWD',1620.0,NULL,NULL,NULL,NULL,0,NULL,NULL,430.0,'{}',203.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2GR');
 INSERT INTO powertrain_ice VALUES(86,88,'agentic-ingest','front transverse',3471.0,6,'naturally aspirated',305.0,NULL,273.0,NULL,NULL,NULL,'MPI (port injection)','6-speed manual',6,'AWD',1640.0,NULL,NULL,NULL,NULL,0,NULL,NULL,430.0,'{}',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
@@ -2335,6 +2341,8 @@ INSERT INTO powertrain_ice VALUES(427,390,'librarian+analysis','dual motor AWD 8
 INSERT INTO powertrain_ice VALUES(428,391,'librarian+analysis','quad motor AWD (liquid-cooled 2170 cells)',NULL,NULL,NULL,835.0,NULL,NULL,NULL,NULL,NULL,NULL,'single-speed per motor',NULL,'AWD',2630.0,NULL,NULL,NULL,NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 INSERT INTO powertrain_ice VALUES(429,392,'librarian+analysis','2.0L turbo + supercharger I4 + electric (ERAD rear)',NULL,NULL,NULL,400.0,NULL,NULL,NULL,NULL,NULL,NULL,'8-speed automatic',NULL,'AWD',2180.0,NULL,NULL,NULL,NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 INSERT INTO powertrain_ice VALUES(430,393,'librarian+analysis','3.0L turbo V6 + electric motor PHEV',NULL,NULL,NULL,455.0,NULL,NULL,NULL,NULL,NULL,NULL,'8-speed automatic',NULL,'AWD',2310.0,NULL,NULL,NULL,NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO powertrain_ice VALUES(431,394,'librarian+analysis','5.0L V8 Tau G8BA',5038.0,8,'naturally aspirated',429.0,NULL,510.0,NULL,NULL,NULL,'port injection','8-speed automatic',8,'RWD',2060.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'Tau 5.0');
+INSERT INTO powertrain_ice VALUES(432,999,'manual+analysis','2.3L I4 M102',2299.0,4,'naturally aspirated',127.0,NULL,190.0,NULL,NULL,NULL,'CFI','4-speed automatic',4,'RWD',1280.0,NULL,NULL,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'M102');
 CREATE TABLE alembic_version (
 	version_num VARCHAR(32) NOT NULL, 
 	CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
@@ -3083,7 +3091,7 @@ INSERT INTO zeperfs_indices VALUES(100,87,146.099999999999994,NULL,4.20000000000
 INSERT INTO zeperfs_indices VALUES(101,88,140.400000000000005,NULL,4.29999999999999982,'formula-v4-2026-06-18 | ppr-2026-06-20','2026-06-20 22:57:35.743879');
 INSERT INTO zeperfs_indices VALUES(102,89,114.700000000000002,NULL,3.60000000000000008,'formula-v4-2026-06-18 | ppr-2026-06-20','2026-06-20 22:57:35.744486');
 INSERT INTO zeperfs_indices VALUES(103,90,102.700000000000002,NULL,3.10000000000000008,'formula-v4-2026-06-18 | ppr-2026-06-20','2026-06-20 22:57:35.745032');
-INSERT INTO zeperfs_indices VALUES(104,91,83.9000000000000056,NULL,3.79999999999999982,'formula-v4-2026-06-18 | ppr-2026-06-20','2026-06-20 22:57:35.745603');
+INSERT INTO zeperfs_indices VALUES(104,91,110.0,NULL,3.79999999999999982,'formula-v4-2026-06-18 | ppr-2026-06-20','2026-06-20 22:57:35.745603');
 INSERT INTO zeperfs_indices VALUES(105,92,88.7000000000000028,NULL,2.79999999999999982,'formula-v4-2026-06-18 | ppr-2026-06-20','2026-06-20 22:57:35.746170');
 INSERT INTO zeperfs_indices VALUES(106,93,110.700000000000002,NULL,4.09999999999999964,'formula-v4-2026-06-18 | ppr-2026-06-20','2026-06-20 22:57:35.747033');
 INSERT INTO zeperfs_indices VALUES(107,94,118.700000000000002,NULL,3.29999999999999982,'formula-v4-2026-06-18 | ppr-2026-06-20','2026-06-20 22:57:35.747763');
@@ -4885,6 +4893,8 @@ INSERT INTO build_quality VALUES(379,390,68.2999999999999971,80.0,60.0,80.0,70.0
 INSERT INTO build_quality VALUES(380,391,51.7000000000000028,50.0,60.0,60.0,50.0,50.0,40.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 INSERT INTO build_quality VALUES(381,392,77.5,80.0,80.0,85.0,75.0,65.0,70.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 INSERT INTO build_quality VALUES(382,393,80.7999999999999971,85.0,85.0,88.0,82.0,68.0,75.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO build_quality VALUES(383,394,73.0,74.0,82.0,84.0,70.0,52.0,58.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'librarian+analysis',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO build_quality VALUES(384,999,72.0,80.0,65.0,60.0,40.0,30.0,45.0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'manual+analysis',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 CREATE TABLE failure_points (
     id INTEGER PRIMARY KEY,
     car_id INTEGER NOT NULL REFERENCES cars(id),
@@ -4953,8 +4963,49 @@ INSERT INTO failure_points VALUES(50,188,'ej255_head_gasket','engine',3,120000,1
 INSERT INTO failure_points VALUES(51,189,'rust_body','body',5,200000,0.0,0.0,0,NULL,NULL,'Subaru thin paint + 30-year-old car. Rust is existential 窶・rockers, wheel arches, floor pans. Engine (EJ22) will outlast the body. Find rust-free example or accept it as a parts car eventually.','2026-06-16 03:45:17');
 INSERT INTO failure_points VALUES(52,185,'k20c4_oil_control_rings','engine',3,80000,400.0,800.0,0,NULL,NULL,'K20C4 oil control ring sticking at 80K+ mi. Oil consumption slowly increases. Well-documented. Monitor oil level, change every 5K mi. Not catastrophic, just progressive.','2026-06-16 03:45:17');
 INSERT INTO failure_points VALUES(53,197,'lambda_coolant_loss','engine',3,60000,200.0,500.0,0,NULL,NULL,'Coolant loss emerging pattern on Lambda II 3.5L Smartstream. Top up once/twice yearly. Root cause TBD. Not catastrophic but monitor. Too new for definitive 200K+ mi data.','2026-06-16 03:45:17');
+CREATE TABLE driving_engagement (
+    id INTEGER PRIMARY KEY,
+    car_id INTEGER NOT NULL REFERENCES cars(id),
+    steering_feel FLOAT,           -- 0-10: communication, feedback, precision
+    chassis_balance FLOAT,         -- 0-10: adjustability, drivetrain layout, rotation
+    transmission_engagement FLOAT, -- 0-10: manual > DCT > auto. clutch/shifter quality
+    powertrain_character FLOAT,    -- 0-10: NA > turbo. sound, response, rev range
+    lightness_agility FLOAT,       -- 0-10: lower weight = more responsive
+    limit_accessibility FLOAT,     -- 0-10: can you reach 8/10ths safely on public roads?
+    des_score FLOAT,               -- average of 6 dimensions (0-10 scale)
+    des_notes TEXT,
+    source VARCHAR(100) DEFAULT 'manual',
+    UNIQUE(car_id)
+);
+INSERT INTO driving_engagement VALUES(1,37,9.0,9.0,9.0,9.0,7.0,8.0,8.5,'Hydraulic steering. 50:50 RWD. NA I6 to 7000rpm. 6MT. 230hp limits accessible. The last pure BMW sedan.','manual+analysis');
+INSERT INTO driving_engagement VALUES(2,187,7.0,6.0,7.0,7.0,8.0,8.0,7.20000000000000017,'Good EPAS for the era. FWD but well-sorted. 6MT is precise. NA I4 revs freely. 1320kg very light. 184hp limits very accessible.','manual+analysis');
+INSERT INTO driving_engagement VALUES(3,189,6.0,6.0,7.0,5.0,8.0,9.0,6.79999999999999982,'Boxer steering has character. AWD balance. 5MT robust. EJ22 NA but slow 窶・rev it to redline. 1340kg light. 137hp = ALL limits reachable. Slow car fast = maximum engagement.','manual+analysis');
+INSERT INTO driving_engagement VALUES(4,170,7.0,8.0,7.0,10.0,5.0,4.0,6.79999999999999982,'Good steering. RWD Holden Zeta platform near 50:50. Tremec 6MT robust. LS3 NA V8 = best engine sound in database. 1805kg heavy. 415hp limits unreachable on public roads.','manual+analysis');
+INSERT INTO driving_engagement VALUES(5,80,7.0,7.0,8.0,7.0,7.0,5.0,6.79999999999999982,'Good EPAS despite FWD. LSD + adaptive dampers allow rotation. Best FWD 6MT. VTEC turbo aggressive. 1400kg OK. 306hp limits high but chassis communicative.','manual+analysis');
+INSERT INTO driving_engagement VALUES(6,93,6.0,7.0,7.0,7.0,7.0,6.0,6.70000000000000017,'Decent steering through AWD. Adjustable with throttle. 5MT robust. Turbo boxer has character. 1470kg. 265hp fun but can get you in trouble.','manual+analysis');
+INSERT INTO driving_engagement VALUES(7,185,6.0,5.0,8.0,7.0,5.0,5.0,6.0,'Acceptable steering. FWD limits. K20C4 + 6MT = Type R-adjacent engagement. Turbo has lag. 1530kg heavy. 252hp moderate.','manual+analysis');
+INSERT INTO driving_engagement VALUES(8,39,3.0,2.0,1.0,5.0,2.0,2.0,2.5,'Over-assisted steering zero feedback. Soft wallowy chassis. Auto only. V8 smooth but silent. 1660kg heavy. 290hp but soft suspension = not fun at limit. Comfort car not driver car.','manual+analysis');
+INSERT INTO driving_engagement VALUES(9,8,3.0,2.0,1.0,4.0,1.0,2.0,2.20000000000000017,'Luxury-tuned EPAS. Soft air suspension. Auto only. V8 tuned for silence. 2150kg very heavy. 420hp unreachable safely. Barge not canyon carver.','manual+analysis');
+INSERT INTO driving_engagement VALUES(10,394,3.0,2.0,1.0,4.0,1.0,2.0,2.20000000000000017,'Same as G90. Land yacht. Beautiful inside but zero driving engagement.','manual+analysis');
+INSERT INTO driving_engagement VALUES(11,43,4.0,4.0,1.0,5.0,3.0,3.0,3.29999999999999982,'Quattro AWD competent but numb. Air suspension isolates. Auto only. V6 refined but characterless. 1960kg heavy. Predictable but not engaging.','manual+analysis');
+INSERT INTO driving_engagement VALUES(12,150,5.0,6.0,2.0,6.0,4.0,4.0,4.5,'Decent steering for EPS. RWD-based. Auto only (no manual in US). B58 turbo has lag but torquey. 1810kg. 335hp adequate but not exciting.','manual+analysis');
+INSERT INTO driving_engagement VALUES(13,14,8.0,10.0,9.0,6.0,10.0,10.0,8.80000000000000071,'Excellent steering. Perfect 50:50 RWD. 6MT sublime. 2.0L revs but slow. 1060kg featherweight. 181hp = every limit reachable. The definition of slow car fast.','manual+analysis');
+INSERT INTO driving_engagement VALUES(14,131,8.0,9.0,8.0,6.0,9.0,10.0,8.30000000000000071,'Excellent steering. RWD designed for drifting. 6MT excellent. FA20 torque dip annoying but revs. 1240kg very light. 200hp = all limits always accessible.','manual+analysis');
+INSERT INTO driving_engagement VALUES(15,12,6.0,6.0,6.0,6.0,7.0,7.0,6.29999999999999982,'Versatile steering. FWD competent. 6MT available but DSG more common. 2.0T generic. 1470kg. 241hp practical fun.','manual+analysis');
+INSERT INTO driving_engagement VALUES(16,104,9.0,10.0,8.0,7.0,9.0,7.0,8.30000000000000071,'Porsche steering benchmark. Mid-engine perfection. 6MT or PDK. 2.0T flat-4 sounds bad (base model). 1355kg light. 300hp limits high but chassis communicates everything.','manual+analysis');
+INSERT INTO driving_engagement VALUES(17,7,4.0,5.0,1.0,8.0,4.0,3.0,4.20000000000000017,'1990s steering has some feel. Heavy but balanced. Auto only. M119 NA V8 sounds incredible. 1710kg. 322hp for the era but soft suspension.','manual+analysis');
+INSERT INTO driving_engagement VALUES(18,118,7.0,8.0,2.0,7.0,7.0,5.0,6.0,'Good EPS. RWD balanced. Auto only in early years (manual added 2020+). B58 turbo torquey but generic sound. 1520kg. 382hp limits unreachable safely.','manual+analysis');
+INSERT INTO driving_engagement VALUES(19,86,2.0,2.0,1.0,4.0,3.0,4.0,2.70000000000000017,'Numb steering. FWD floaty. CVT/auto only. V6 smooth but silent. 1620kg. 302hp but zero feedback. Transportation not driving.','manual+analysis');
+INSERT INTO driving_engagement VALUES(20,178,5.0,4.0,2.0,7.0,3.0,3.0,4.0,'1980s recirculating ball has some feel. Heavy but RWD. 4-speed auto. M117 NA V8 sounds good. 1745kg. 238hp for the era. Analog character but not sporty.','manual+analysis');
+INSERT INTO driving_engagement VALUES(21,84,6.0,7.0,7.0,5.0,7.0,10.0,7.0,'User actual car. Bought at 179K mi with HG already done, now at 191K mi. EJ251 2.5L SOHC, 4-speed auto, AWD. ~130-140hp effective at elevation after 27 years. Boxer steering has character. AWD balance adjustable with throttle. Auto limits engagement but still involving. EJ251 NA slow at elevation ? momentum driving required. 1465kg moderate. ALL limits always reachable. EPD 233 = highest in database. This is the car that taught the user that enjoyment per dollar > horsepower.','manual+analysis');
+INSERT INTO driving_engagement VALUES(23,70,5.0,4.0,2.0,7.0,1.0,9.0,4.70000000000000017,'Model S Plaid 2021: EPS, well-tuned for a luxury sedan but no feel vs hydraulic. 2162kg - HEAVY. Single-speed. Tri-motor, instant torque, 1020hp - intoxicating acceleration. 0-60 in 2.1s is absurdly fast but the 2162kg kills handling. Driving limits are different (regen, one-pedal, instant torque) but the car is too big and heavy to be fun. Best as a straight-line GT. Plaid mode is a party trick but the weight makes it a luxury car not a drivers car.','manual+analysis');
+INSERT INTO driving_engagement VALUES(24,71,6.0,7.0,2.0,8.0,6.0,8.0,6.20000000000000017,'Model 3 Performance 2018: EPS but well-tuned for a street car, good turn-in. Low center of gravity (battery floor), RWD-biased AWD. Single-speed, no gear engagement. Instant torque from dual motors. 1847kg. 0-60 in 3.1s is incredible for a  used car. Best handling Tesla - tracks well on a back road. Limits are accessible due to the grip. But no engine note, no gearbox - you miss the mechanical engagement. EV torque delivery is intoxicating but anonymous.','manual+analysis');
+INSERT INTO driving_engagement VALUES(25,72,4.0,5.0,2.0,6.0,5.0,7.0,4.79999999999999982,'Model Y Range 2020: EPS, uninspiring. 1847kg SUV, RWD. Single-speed. Dual motor, 384hp. 0-60 in 4.8s for a family SUV. Practicality is its strength - the best interior space in any  crossover. But heavier and taller than Model 3, less fun. Tesla Performance upgrade brings it to 3.5s 0-60. As a daily driver for SF commute + weekend canyon runs, it works but a Model 3 Performance is better at the fun part.','manual+analysis');
+INSERT INTO driving_engagement VALUES(26,999,7.0,6.0,5.0,6.0,8.0,8.0,6.29999999999999982,'Character reference. 190E 2.3 8V RWD NA. Recirculating-ball steering with actual feel. Compact RWD. Modest power but excellent chassis. The DNA that runs in every 3-Series today.','manual+analysis');
 CREATE INDEX idx_fp_car ON failure_points(car_id);
 CREATE INDEX idx_fp_component ON failure_points(component);
 CREATE INDEX idx_fp_severity ON failure_points(severity);
 CREATE INDEX idx_fp_preventive ON failure_points(is_preventive);
+CREATE INDEX idx_des_car ON driving_engagement(car_id);
+CREATE INDEX idx_des_score ON driving_engagement(des_score);
 COMMIT;
